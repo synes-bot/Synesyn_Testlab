@@ -331,7 +331,7 @@ limits pass.
 ## Stage 9 — Compare Paths (evidence-backed, incl. do-nothing)
 **Goal**: the commercial centrepiece. Detail: gap-closure "Compare paths".
 - [x] First-class path objects incl. explicit `is_do_nothing`; fields: outcomes, biggest risk, assumptions, uncertainty, time horizon, `evidence_refs[]` (or explicit `evidence_status: none`).
-- [x] Evidence retrieval via Artrithmetic Store; citations surfaced in plain language.
+- [x] Evidence retrieval via STFX Store; citations surfaced in plain language.
 - [x] Facilitator selects/combines a path → commit via ClosureBus with store trace ids.
 - **Guardrails**: every path states evidence status honestly; do-nothing always present; commit only on explicit approval; no simulation jargon in UI.
 - **Verification**: passed 2026-07-11 — focused Stage 9 Godot coverage

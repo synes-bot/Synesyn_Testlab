@@ -419,7 +419,7 @@ Typed relationships are the semantic foundation. Context compilation and provena
 - [ ] `ContentViewManager` continues to own List/Hierarchy/Context Graph switching.
 - [ ] `ContentGraphController` coordinates the view but does not become the schema, compiler, persistence store, diagnostic engine, or AI service.
 - [ ] Runtime-safe services own compilation, rule evaluation, validation, migration, and diff logic so non-editor Synesyn clients can reuse them.
-- [ ] Hub/Artrithmetic Store owns committed artifacts, versions, provenance, traces, and repairability. Generated indexes/caches remain disposable.
+- [ ] Hub/STFX Store owns committed artifacts, versions, provenance, traces, and repairability. Generated indexes/caches remain disposable.
 - [ ] `ui.context_graph` stores semantic graph state; user layout state is stored separately or clearly namespaced and excluded from semantic diffs.
 - [ ] Every Godot↔Hub payload change updates client, server, normative contract, migration/compatibility reader, and tests in one delivery stage.
 - [ ] Maintain v0 readers until all known `ui.context_graph` consumers—including SynAxes bridge import—accept v1.
@@ -503,7 +503,7 @@ Follow-ups:
       the 7 pre-existing regressions before regenerating, largest first:
       `game_session.gd` 1185->1205 (over the hard limit),
       `synaxes_runtime_controller.gd` 1077->1175,
-      `artrhythmetic_store/service.py` 900->989, `services_panel.gd`,
+      `stfx_store/service.py` 900->989, `services_panel.gd`,
       `metapunkt_main.gd`, `synpunkt_dock.gd`, `story_stage.gd`. This work added
       +12 to `syntree_panel.gd` (1163) and +6 to
       `syntree_panel_dev_agent_utils.gd` (970), both under the hard limit. Four

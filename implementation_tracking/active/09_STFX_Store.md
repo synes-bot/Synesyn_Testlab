@@ -1,4 +1,4 @@
-# To-Do - Artrithmetic Store (canonical memory substrate + generated indexes)
+# To-Do - STFX Store (canonical memory substrate + generated indexes)
 
 **Primary spec references**
 - `../../docs/implementation_docs/STFX_Memory_Capability_Spec.md`
@@ -8,16 +8,16 @@
 - `../Human_Agency_UX_Contract.md`
 
 **Intent**
-- Make Artrithmetic the governing memory grammar for symbolic recall, semantic candidate discovery, provenance, traces, closures, and runtime context.
+- Make STFX the governing memory grammar for symbolic recall, semantic candidate discovery, provenance, traces, closures, and runtime context.
 - Keep canonical memory human-readable, file-backed, auditable, and repairable.
 - Treat SQLite, embeddings, vector indexes, and other databases as optional generated accelerators, not as the truth layer.
-- Preserve the existing Artrithmetic core logic: seed matrices, complement logic, tensor expansion, symbolic addressing, and deterministic retrieval remain primary.
+- Preserve the existing STFX core logic: seed matrices, complement logic, tensor expansion, symbolic addressing, and deterministic retrieval remain primary.
 
 **Naming**
-- Capability / user-facing concept: **Artrithmetic Memory**
-- Technical subsystem: **Artrithmetic Store**
-- Python module: `artrhythmetic_store`
-- Workspace folder: `artrhythmetic_store/`
+- Capability / user-facing concept: **STFX Memory**
+- Technical subsystem: **STFX Store**
+- Python module: `stfx_store`
+- Workspace folder: `stfx_store/`
 
 ---
 
@@ -50,7 +50,7 @@
   - [x] rerun retrieval
 
 ## B) Module scaffold
-- [x] (v0) Create canonical module home at `synesyn/services/synesyn_hub/app/artrhythmetic_store/`.
+- [x] (v0) Create canonical module home at `synesyn/services/synesyn_hub/app/stfx_store/`.
 - [x] (v0) Add initial module files:
   - [x] `__init__.py`
   - [x] `schemas.py`
@@ -70,20 +70,20 @@
   - [x] `service.py`
   - [x] `routes.py`
   - [x] `README.md`
-- [x] (v0) Keep the existing `artrhythmetic_memory` core importable and app-agnostic; do not duplicate seed/tensor logic inside the store.
-- [x] (v0) Define the store as a host/body for Artrithmetic core decisions, not a replacement for the core.
+- [x] (v0) Keep the existing `stfx_memory` core importable and app-agnostic; do not duplicate seed/tensor logic inside the store.
+- [x] (v0) Define the store as a host/body for STFX core decisions, not a replacement for the core.
 
 ## C) Workspace layout
 - [x] (v0) Create workspace-local canonical layout:
-  - [x] `artrhythmetic_store/store_manifest.json`
-  - [x] `artrhythmetic_store/schemas/`
-  - [x] `artrhythmetic_store/seeds/`
-  - [x] `artrhythmetic_store/sources/`
-  - [x] `artrhythmetic_store/memories/`
-  - [x] `artrhythmetic_store/closures/`
-  - [x] `artrhythmetic_store/artifacts/`
-  - [x] `artrhythmetic_store/traces/`
-  - [x] `artrhythmetic_store/indexes/`
+  - [x] `stfx_store/store_manifest.json`
+  - [x] `stfx_store/schemas/`
+  - [x] `stfx_store/seeds/`
+  - [x] `stfx_store/sources/`
+  - [x] `stfx_store/memories/`
+  - [x] `stfx_store/closures/`
+  - [x] `stfx_store/artifacts/`
+  - [x] `stfx_store/traces/`
+  - [x] `stfx_store/indexes/`
 - [x] (v0) Mark `indexes/` as generated and rebuildable in `store_manifest.json`.
 - [x] (v0) Add safe bootstrapping for missing folders and initial manifest creation.
 - [x] (v0) Add atomic write behavior for canonical files and generated indexes.
@@ -192,7 +192,7 @@
   - [x] lexical candidates
   - [x] relation-neighborhood candidates
   - Optional vector candidates are deferred to the optional vector accelerator work below.
-- [x] (v1) Deepen Artrithmetic core responsibility for final symbolic expansion/ranking decisions beyond the current trace-summary integration.
+- [x] (v1) Deepen STFX core responsibility for final symbolic expansion/ranking decisions beyond the current trace-summary integration.
 - [x] (v0.1) Emit retrieval trace for every retrieval:
   - [x] query/request
   - [x] scope
@@ -211,36 +211,36 @@
   - [x] provenance metadata
 
 ## H) Hub API surface
-- [x] (v1) Register routes under `/artrhythmetic-store`.
+- [x] (v1) Register routes under `/stfx-store`.
 - [x] (v1) Implement:
-  - [x] `GET /artrhythmetic-store/status`
-  - [x] `POST /artrhythmetic-store/config`
-  - [x] `GET /artrhythmetic-store/sources`
-  - [x] `POST /artrhythmetic-store/sources/ingest`
-  - [x] `POST /artrhythmetic-store/indexes/rebuild`
-  - [x] `POST /artrhythmetic-store/retrieve`
-  - [x] `GET /artrhythmetic-store/traces/{trace_id}`
-  - [x] `GET /artrhythmetic-store/context-packs`
-  - [x] `GET /artrhythmetic-store/context-packs/{context_pack_id}`
-  - [x] `GET /artrhythmetic-store/indexes/{index_name}`
-  - [x] `GET /artrhythmetic-store/chunks/{chunk_id}`
-  - [x] `POST /artrhythmetic-store/chunks/{chunk_id}/symbolic`
-  - [x] `POST /artrhythmetic-store/artifacts/commit`
-  - [x] `POST /artrhythmetic-store/context-graphs/commit`
-  - [x] `GET /artrhythmetic-store/memories`
-  - [x] `POST /artrhythmetic-store/memories/commit`
-  - [x] `GET /artrhythmetic-store/closures`
-  - [x] `POST /artrhythmetic-store/closures/commit`
-  - [x] `POST /artrhythmetic-store/validate`
-  - [x] `POST /artrhythmetic-store/repair/report`
-  - [x] `POST /artrhythmetic-store/migrations/artrhythmetic-memory/export`
-  - [x] `POST /artrhythmetic-store/migrations/syntree-context-graphs/export`
-  - [x] `POST /artrhythmetic-store/migrations/substrate-artifacts/export`
+  - [x] `GET /stfx-store/status`
+  - [x] `POST /stfx-store/config`
+  - [x] `GET /stfx-store/sources`
+  - [x] `POST /stfx-store/sources/ingest`
+  - [x] `POST /stfx-store/indexes/rebuild`
+  - [x] `POST /stfx-store/retrieve`
+  - [x] `GET /stfx-store/traces/{trace_id}`
+  - [x] `GET /stfx-store/context-packs`
+  - [x] `GET /stfx-store/context-packs/{context_pack_id}`
+  - [x] `GET /stfx-store/indexes/{index_name}`
+  - [x] `GET /stfx-store/chunks/{chunk_id}`
+  - [x] `POST /stfx-store/chunks/{chunk_id}/symbolic`
+  - [x] `POST /stfx-store/artifacts/commit`
+  - [x] `POST /stfx-store/context-graphs/commit`
+  - [x] `GET /stfx-store/memories`
+  - [x] `POST /stfx-store/memories/commit`
+  - [x] `GET /stfx-store/closures`
+  - [x] `POST /stfx-store/closures/commit`
+  - [x] `POST /stfx-store/validate`
+  - [x] `POST /stfx-store/repair/report`
+  - [x] `POST /stfx-store/migrations/stfx-memory/export`
+  - [x] `POST /stfx-store/migrations/syntree-context-graphs/export`
+  - [x] `POST /stfx-store/migrations/substrate-artifacts/export`
 - [x] (v1) Keep routes app-agnostic; ScenSyn/SynTree/SynAxes semantics belong in adapters.
 - [x] (v1) Add API responses that expose explanation traces, not only selected text.
 
 ## I) SynTree integration
-- [x] (v1) Add optional SynTree path: active content sources -> Artrithmetic Store retrieval -> context pack.
+- [x] (v1) Add optional SynTree path: active content sources -> STFX Store retrieval -> context pack.
 - [x] (v1) Preserve current direct active-source injection as fallback.
 - [x] (v1) Let SynTree publish `ui.context_graph` snapshots into the store as canonical or mirrored context records.
 - [x] (v1) Add citation labels based on source/chunk metadata.
@@ -284,28 +284,28 @@
 
 ### K.1 Current storage classification
 
-**Canonical Artrithmetic Store responsibility**
-- `artrhythmetic_store/sources/`, `chunks/`, `memories/`, `closures/`, `traces/`, and `artifacts/context_packs/` are the human-readable truth layer for memory retrieval and repair.
+**Canonical STFX Store responsibility**
+- `stfx_store/sources/`, `chunks/`, `memories/`, `closures/`, `traces/`, and `artifacts/context_packs/` are the human-readable truth layer for memory retrieval and repair.
 - SynTree local file-backed active sources should be ingested into source/chunk records when store-backed context is enabled.
-- SynTree `ui.context_graph` payloads mirrored into the store are canonical for Artrithmetic memory/provenance workflows, even if a LatentSubstrate artifact copy also exists.
+- SynTree `ui.context_graph` payloads mirrored into the store are canonical for STFX memory/provenance workflows, even if a LatentSubstrate artifact copy also exists.
 - ScenSyn `json.scensyn_continuity_context` committed from store context packs is a store artifact when the continuity context is part of memory repair/provenance.
-- Future SynAxes/SynPunkt closures should commit to `closures/` first when they express symbolic selection, human commit metadata, or Artrithmetic constraints.
+- Future SynAxes/SynPunkt closures should commit to `closures/` first when they express symbolic selection, human commit metadata, or STFX constraints.
 
 **LatentSubstrate / SQLite responsibility**
 - `app/substrate/db.py` uses SQLite for sessions, events, entities, relations, artifact index records, jobs, and metadata/provenance lookup. Keep this as the local operational substrate and query index.
 - `POST /substrate/artifacts`, `/substrate/events`, `/substrate/entities`, `/substrate/relations`, and `/substrate/query` remain the app-wide operational API for runtime events, UI artifacts, render outputs, and cross-app provenance queries.
-- LatentSubstrate artifacts that duplicate store records should be treated as mirrors or compatibility bridges unless the artifact type is outside Artrithmetic memory scope.
-- The SQLite file is not the canonical ontology for Artrithmetic memory. If SQLite and store records disagree about a source/chunk/memory/closure/trace, the store record wins.
+- LatentSubstrate artifacts that duplicate store records should be treated as mirrors or compatibility bridges unless the artifact type is outside STFX memory scope.
+- The SQLite file is not the canonical ontology for STFX memory. If SQLite and store records disagree about a source/chunk/memory/closure/trace, the store record wins.
 
 **Generated accelerator responsibility**
-- `artrhythmetic_store/indexes/` remains disposable: symbolic, lexical, relation, and vector manifests can be rebuilt from canonical records.
+- `stfx_store/indexes/` remains disposable: symbolic, lexical, relation, and vector manifests can be rebuilt from canonical records.
 - SynAxes `embeddings.text` and `embeddings.image` job outputs are generated accelerator artifacts. They may support projection, clustering, semantic lookup, or future vector sidecars, but are not memory truth.
 - SynAxes `coords.projection_2d/3d`, `graph.cluster_result`, `graph.bridge_result`, and `graph.hub_result` are generated analytic artifacts. They can inform closures, but a human-committed closure must be written as a canonical closure record when it becomes part of memory.
 - Future SQLite/Postgres/LanceDB/Chroma/Qdrant mirrors belong behind an accelerator adapter and must be rebuildable from canonical store records plus artifact provenance.
 
 **Artifact/provenance mirror responsibility**
 - `ui.context_graph`, `ui.prompt_chain`, `text.summary`, `text.prompt`, `json.metrics`, `audio.tts`, `text.transcript`, render artifacts, and SynAxes result artifacts should remain valid LatentSubstrate artifacts with provenance.
-- When such artifacts become inputs to Artrithmetic retrieval, store records should reference their artifact ids or payloads explicitly; the store should not scrape opaque artifact indexes.
+- When such artifacts become inputs to STFX retrieval, store records should reference their artifact ids or payloads explicitly; the store should not scrape opaque artifact indexes.
 - Bridge artifacts such as `bridge.ui_context_graph` and `chat.thread` snapshots are compatibility/provenance handles, not canonical memory records.
 
 **Legacy compatibility path**
@@ -314,19 +314,19 @@
 - Current deterministic placeholder embedding jobs remain useful for stable SynAxes contracts while real embedding backends are introduced later as accelerators.
 - [x] (v1) Keep existing SQLite/embedding code paths as optional accelerators during migration.
 - [x] (v1) Add app-level opt-in config flags:
-  - [x] `apps.syntree.use_artrhythmetic_store_context`
-  - [x] `apps.syntree.publish_context_graph_to_artrhythmetic_store`
-  - [x] `apps.syntree.artrhythmetic_store_top_k`
-  - [x] `apps.syntree.artrhythmetic_store_expansion_depth`
-  - [x] `apps.syntree.artrhythmetic_store_default_seed`
-  - [x] `apps.scensyn.publish_closures_to_artrhythmetic_store`
+  - [x] `apps.syntree.use_stfx_store_context`
+  - [x] `apps.syntree.publish_context_graph_to_stfx_store`
+  - [x] `apps.syntree.stfx_store_top_k`
+  - [x] `apps.syntree.stfx_store_expansion_depth`
+  - [x] `apps.syntree.stfx_store_default_seed`
+  - [x] `apps.scensyn.publish_closures_to_stfx_store`
 - [x] (v1) Add runtime-configurable global Store/accelerator flags:
-  - [x] `artrhythmetic_store.enabled` or equivalent Hub-wide switch
-  - [x] `artrhythmetic_store.accelerators.lexical`
-  - [x] `artrhythmetic_store.accelerators.vector`
-  - [x] `artrhythmetic_store.accelerators.sqlite`
+  - [x] `stfx_store.enabled` or equivalent Hub-wide switch
+  - [x] `stfx_store.accelerators.lexical`
+  - [x] `stfx_store.accelerators.vector`
+  - [x] `stfx_store.accelerators.sqlite`
 - [x] (v1) Add migration/export commands:
-  - [x] existing Artrithmetic Memory documents -> Artrithmetic Store records
+  - [x] existing STFX Memory documents -> STFX Store records
   - [x] existing SynTree context graphs -> store context records
   - [x] existing substrate artifacts -> store artifact mirrors where appropriate
 
@@ -361,8 +361,8 @@
   - [x] session artifact links trace/provenance
 
 ## M) Suggested execution order
-1. [x] Update `STFX_Memory_Capability_Spec.md` with Artrithmetic Store naming and truth-vs-index rule.
-2. [x] Scaffold `app/artrhythmetic_store/`.
+1. [x] Update `STFX_Memory_Capability_Spec.md` with STFX Store naming and truth-vs-index rule.
+2. [x] Scaffold `app/stfx_store/`.
 3. [x] Implement workspace layout, manifest, schemas, and atomic IO.
 4. [x] Implement markdown/text ingest into source + chunk records.
 5. [x] Implement symbolic, lexical, and relation index rebuild.

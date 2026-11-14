@@ -308,7 +308,7 @@ Mounted under `/stfx-store`:
 - `POST /migrations/syntree-context-graphs/export`
 - `POST /migrations/substrate-artifacts/export`
 
-Record contracts are defined in `STFX_Memory_Capability_Spec.md` and `implementation_tracking/active/09_Artrithmetic_Store.md`.
+Record contracts are defined in `STFX_Memory_Capability_Spec.md` and `implementation_tracking/active/09_STFX_Store.md`.
 
 ---
 

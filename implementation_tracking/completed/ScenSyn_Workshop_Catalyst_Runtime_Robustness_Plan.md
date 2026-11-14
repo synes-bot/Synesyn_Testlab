@@ -73,9 +73,9 @@ Examples:
 
 ### 3.4 Continuity layering
 
-Workshop Catalyst continuity should reuse the existing Synesyn Hub / Artrithmetic path only at the correct layer:
+Workshop Catalyst continuity should reuse the existing Synesyn Hub / STFX path only at the correct layer:
 
-`ArtrithmeticMemory` -> `continuity_context` -> `scensyn.scenario_continuity_state` -> Workshop Catalyst interpretation
+`StfxMemory` -> `continuity_context` -> `scensyn.scenario_continuity_state` -> Workshop Catalyst interpretation
 
 Rules:
 
@@ -523,7 +523,7 @@ Done when:
 
 ## 7.10 `synesyn/synesyn_client/ScenSyn/scripts/services/scensyn_continuity_service.gd`
 
-Purpose: keep the Hub/Artrithmetic continuity path reusable for Workshop Catalyst.
+Purpose: keep the Hub/STFX continuity path reusable for Workshop Catalyst.
 
 - [ ] Ensure Workshop Catalyst continuity source documents are scaffold-based and summary/digest-oriented, not transcript-replay-oriented.
 - [ ] Extend `_build_scenario_memory_markdown()` to include workshop-relevant authored sections when present, such as:
@@ -752,7 +752,7 @@ The decision matrix evaluated three options:
 
 Rationale for Option B over A:
 - The agent pattern in ScenSyn is for autonomous LLM-driven generation per turn. SessionRecord is fundamentally an event-driven coordinator with occasional LLM calls; forcing it into the agent shape misrepresents what it is.
-- Substrate hand-off (closures persisted as `ui.closure` artifacts in the LatentSubstrate) is the immediate leverage point for "consolidating closure across Synesyn." Memory-bearing closures should later be mirrored into Artrithmetic Store `closures/` as the canonical memory form. That requires an emitter/bridge, not an agent.
+- Substrate hand-off (closures persisted as `ui.closure` artifacts in the LatentSubstrate) is the immediate leverage point for "consolidating closure across Synesyn." Memory-bearing closures should later be mirrored into STFX Store `closures/` as the canonical memory form. That requires an emitter/bridge, not an agent.
 - The hard part of closure formation (what converges, what counts, what shape) is irreducibly theme-specific. Promoting it monolithically would either pull theme logic up or produce an empty abstraction.
 - Workshop Catalyst is currently the only theme exercising vote-based closure. Two implementations are needed before the abstraction joints become visible.
 - Option B does not foreclose Option A. The kernel is the natural Phase 1 of any future agent-promotion path.
@@ -823,7 +823,7 @@ Subscribes to `ClosureBus.closure_captured` and posts each capture to the Synesy
 - Silent failure modes: if Hub unreachable, returns non-2xx, or workspace not configured, the post fails quietly. A single warning is printed once if the Hub URL cannot be resolved at all.
 - Discards are not persisted by default (they are useful as a live signal but typically not as substrate artifacts).
 - Provenance metadata indexed by the Hub: `source_app`, `theme_id`, `scenario_id`, `scenario_name`, `kind`, `outcome`, `trigger`, `stage_name`, `captured_at_unix`.
-- Optional Artrithmetic Store mirror: when `apps.scensyn.publish_closures_to_artrhythmetic_store=true`, captured closures are also posted to `/artrhythmetic-store/closures/commit` as canonical Store closure records.
+- Optional STFX Store mirror: when `apps.scensyn.publish_closures_to_stfx_store=true`, captured closures are also posted to `/stfx-store/closures/commit` as canonical Store closure records.
 
 ### 7.2 Wiring
 
@@ -856,7 +856,7 @@ All Phase 7 changes satisfy the normative rule:
 The substrate hand-off lights up immediately when the Hub is running:
 
 - ScenSyn closures become first-class `ui.closure` artifacts in the LatentSubstrate.
-- Memory-bearing closures can be bridged into Artrithmetic Store `closures/` as canonical symbolic memory records.
+- Memory-bearing closures can be bridged into STFX Store `closures/` as canonical symbolic memory records.
 - SynAxes can now analyze cross-session closure patterns (which decisions recur, which dissolve, who votes for what).
 - SynPunkt can stage captured closures as canonical objects, using `ui.closure` artifacts as operational handles and Store closure records where symbolic memory/provenance matters.
 - ReadyMade can carry closures forward as published artifacts.
