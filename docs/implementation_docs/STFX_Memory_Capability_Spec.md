@@ -3,7 +3,7 @@
 **Status**: Proposed implementation spec (updated November 2026; ADR 0032)  
 **Scope**: Synesyn-native, app-agnostic symbolic memory capability  
 **Canonical home**: `services/synesyn_hub/app/stfx_memory/`  
-**Prototype reference only**: `stochasticdreams_visualsystem/Artrhythmetic/artrhythmetic-database_system/`
+**Prototype reference only**: `stochasticdreams_visualsystem/Artrithmetic/artrhythmetic-database_system/`
 
 **Narrative integration note (v5.2)**: In the Stochastic Dreams scenario,
 `StfxMemory`'s `continuity_context` outputs (anchors, latent_tensions,
@@ -715,7 +715,7 @@ The production goal is:
 
 The prototype in:
 
-`stochasticdreams_visualsystem/Artrhythmetic/artrhythmetic-database_system/`
+`stochasticdreams_visualsystem/Artrithmetic/artrhythmetic-database_system/`
 
 should be preserved as reference material for:
 

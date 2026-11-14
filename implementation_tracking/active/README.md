@@ -16,7 +16,7 @@ As the project matures toward deployment, the completed checklists will be conso
 - `../LatentSubstrate_Data_Model.md`
 - `../Local_Deployment_Runbook.md`
 - `../Human_Agency_UX_Contract.md`
-- `../Artrhythmetic_Memory_Capability_Spec.md`
+- `../../docs/implementation_docs/STFX_Memory_Capability_Spec.md`
 - `../ScenSyn_Workshop_Catalyst_Runtime_Robustness_Plan.md`
 
 ## Component checklists
@@ -26,9 +26,9 @@ As the project matures toward deployment, the completed checklists will be conso
 - `04_SynTree_Voice.md`
 - `05_SynAxes.md`
 - `06_SynPunkt.md`
-- `07_Artrhythmetic_Memory.md`
+- `07_Artrithmetic_Memory.md`
 - `08_UI_Refresh.md` (historical UI research; spatial UI effort withdrawn — see ADR 0010)
-- `09_Artrhythmetic_Store.md`
+- `09_Artrithmetic_Store.md`
 - `10_Session_Types_and_Society_of_Minds.md`
 - `11_Workshop_Catalyst_Build_Staging.md`
 
@@ -39,9 +39,9 @@ As the project matures toward deployment, the completed checklists will be conso
 4. `02_Metapunkt.md` (wire audit/events/provenance to the substrate via hub)
 5. `05_SynAxes.md` (Latent Reality engine: closures + 4D navigation; jobs + substrate-backed analysis)
 6. `06_SynPunkt.md` (presentation + generation surface: SynDeck v2 + Story Stage mode + render orchestration)
-7. `07_Artrhythmetic_Memory.md` (symbolic deterministic memory capability; app-agnostic; file-backed canonical store)
+7. `07_Artrithmetic_Memory.md` (symbolic deterministic memory capability; app-agnostic; file-backed canonical store)
 8. `03_SynTree.md` (prompt-chain editor + provider consolidation + deeper substrate integration)
-9. `09_Artrhythmetic_Store.md` (canonical memory substrate + generated indexes + swappable accelerators)
+9. `09_Artrithmetic_Store.md` (canonical memory substrate + generated indexes + swappable accelerators)
 10. `10_Session_Types_and_Society_of_Minds.md` (ScenSyn-specific: theme → SessionType elevation, Workshop Catalyst hidden multi-agent synthesis)
 11. `11_Workshop_Catalyst_Build_Staging.md` (sequenced delivery plan over docs 10 + gap-closure: 11 logical stages, contract seams, verification gates, rollback posture)
 
@@ -51,10 +51,10 @@ As the project matures toward deployment, the completed checklists will be conso
 > is archived under `_archive/spatial_ui/docs/`.
 
 Notes:
-- SynAxes is intentionally earlier now because it owns human-reviewed closure formation; SynPunkt consumes and performs closures rather than re-implementing closure logic. Artrhythmetic Store now defines the canonical memory form for closures that carry symbolic memory/provenance.
-- Artrhythmetic Memory follows the hub and SynAxes layers because it is a general capability hosted by Synesyn, but must remain conceptually distinct from embeddings/LatentSubstrate-first analysis.
+- SynAxes is intentionally earlier now because it owns human-reviewed closure formation; SynPunkt consumes and performs closures rather than re-implementing closure logic. Artrithmetic Store now defines the canonical memory form for closures that carry symbolic memory/provenance.
+- Artrithmetic Memory follows the hub and SynAxes layers because it is a general capability hosted by Synesyn, but must remain conceptually distinct from embeddings/LatentSubstrate-first analysis.
 - SynTree work remains later because it risks breaking the editor assistant UX if done too early.
-- Artrhythmetic Store formalizes the newer direction: Artrhythmetic Memory remains the capability/core logic, while the Store becomes the human-readable canonical substrate with generated, disposable indexes and optional accelerators.
+- Artrithmetic Store formalizes the newer direction: Artrithmetic Memory remains the capability/core logic, while the Store becomes the human-readable canonical substrate with generated, disposable indexes and optional accelerators.
 
 ## How to use
 - Treat each file as a living implementation plan.

@@ -419,7 +419,7 @@ Typed relationships are the semantic foundation. Context compilation and provena
 - [ ] `ContentViewManager` continues to own List/Hierarchy/Context Graph switching.
 - [ ] `ContentGraphController` coordinates the view but does not become the schema, compiler, persistence store, diagnostic engine, or AI service.
 - [ ] Runtime-safe services own compilation, rule evaluation, validation, migration, and diff logic so non-editor Synesyn clients can reuse them.
-- [ ] Hub/Artrhythmetic Store owns committed artifacts, versions, provenance, traces, and repairability. Generated indexes/caches remain disposable.
+- [ ] Hub/Artrithmetic Store owns committed artifacts, versions, provenance, traces, and repairability. Generated indexes/caches remain disposable.
 - [ ] `ui.context_graph` stores semantic graph state; user layout state is stored separately or clearly namespaced and excluded from semantic diffs.
 - [ ] Every Godot↔Hub payload change updates client, server, normative contract, migration/compatibility reader, and tests in one delivery stage.
 - [ ] Maintain v0 readers until all known `ui.context_graph` consumers—including SynAxes bridge import—accept v1.

@@ -40,4 +40,4 @@ seeds/seed_registry.json
 services/comfyui/logs/
 # Authoring source held outside the repository, see ADR 0024 for the same pattern.
 development_notes/Stochastic_Dreams_Concept_Note_v5.txt
-stochasticdreams_visualsystem/Artrhythmetic/artrhythmetic-database_system/
+stochasticdreams_visualsystem/Artrithmetic/artrhythmetic-database_system/

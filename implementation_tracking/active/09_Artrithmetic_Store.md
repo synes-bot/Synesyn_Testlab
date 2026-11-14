@@ -1,21 +1,21 @@
-# To-Do - Artrhythmetic Store (canonical memory substrate + generated indexes)
+# To-Do - Artrithmetic Store (canonical memory substrate + generated indexes)
 
 **Primary spec references**
-- `../Artrhythmetic_Memory_Capability_Spec.md`
+- `../../docs/implementation_docs/STFX_Memory_Capability_Spec.md`
 - `../LatentSubstrate_Data_Model.md`
 - `../Synesyn_Platform_Technical_Architecture.md`
 - `../Synesyn_Hub_API_Spec.md`
 - `../Human_Agency_UX_Contract.md`
 
 **Intent**
-- Make Artrhythmetic the governing memory grammar for symbolic recall, semantic candidate discovery, provenance, traces, closures, and runtime context.
+- Make Artrithmetic the governing memory grammar for symbolic recall, semantic candidate discovery, provenance, traces, closures, and runtime context.
 - Keep canonical memory human-readable, file-backed, auditable, and repairable.
 - Treat SQLite, embeddings, vector indexes, and other databases as optional generated accelerators, not as the truth layer.
-- Preserve the existing Artrhythmetic core logic: seed matrices, complement logic, tensor expansion, symbolic addressing, and deterministic retrieval remain primary.
+- Preserve the existing Artrithmetic core logic: seed matrices, complement logic, tensor expansion, symbolic addressing, and deterministic retrieval remain primary.
 
 **Naming**
-- Capability / user-facing concept: **Artrhythmetic Memory**
-- Technical subsystem: **Artrhythmetic Store**
+- Capability / user-facing concept: **Artrithmetic Memory**
+- Technical subsystem: **Artrithmetic Store**
 - Python module: `artrhythmetic_store`
 - Workspace folder: `artrhythmetic_store/`
 
@@ -71,7 +71,7 @@
   - [x] `routes.py`
   - [x] `README.md`
 - [x] (v0) Keep the existing `artrhythmetic_memory` core importable and app-agnostic; do not duplicate seed/tensor logic inside the store.
-- [x] (v0) Define the store as a host/body for Artrhythmetic core decisions, not a replacement for the core.
+- [x] (v0) Define the store as a host/body for Artrithmetic core decisions, not a replacement for the core.
 
 ## C) Workspace layout
 - [x] (v0) Create workspace-local canonical layout:
@@ -192,7 +192,7 @@
   - [x] lexical candidates
   - [x] relation-neighborhood candidates
   - Optional vector candidates are deferred to the optional vector accelerator work below.
-- [x] (v1) Deepen Artrhythmetic core responsibility for final symbolic expansion/ranking decisions beyond the current trace-summary integration.
+- [x] (v1) Deepen Artrithmetic core responsibility for final symbolic expansion/ranking decisions beyond the current trace-summary integration.
 - [x] (v0.1) Emit retrieval trace for every retrieval:
   - [x] query/request
   - [x] scope
@@ -240,7 +240,7 @@
 - [x] (v1) Add API responses that expose explanation traces, not only selected text.
 
 ## I) SynTree integration
-- [x] (v1) Add optional SynTree path: active content sources -> Artrhythmetic Store retrieval -> context pack.
+- [x] (v1) Add optional SynTree path: active content sources -> Artrithmetic Store retrieval -> context pack.
 - [x] (v1) Preserve current direct active-source injection as fallback.
 - [x] (v1) Let SynTree publish `ui.context_graph` snapshots into the store as canonical or mirrored context records.
 - [x] (v1) Add citation labels based on source/chunk metadata.
@@ -284,18 +284,18 @@
 
 ### K.1 Current storage classification
 
-**Canonical Artrhythmetic Store responsibility**
+**Canonical Artrithmetic Store responsibility**
 - `artrhythmetic_store/sources/`, `chunks/`, `memories/`, `closures/`, `traces/`, and `artifacts/context_packs/` are the human-readable truth layer for memory retrieval and repair.
 - SynTree local file-backed active sources should be ingested into source/chunk records when store-backed context is enabled.
-- SynTree `ui.context_graph` payloads mirrored into the store are canonical for Artrhythmetic memory/provenance workflows, even if a LatentSubstrate artifact copy also exists.
+- SynTree `ui.context_graph` payloads mirrored into the store are canonical for Artrithmetic memory/provenance workflows, even if a LatentSubstrate artifact copy also exists.
 - ScenSyn `json.scensyn_continuity_context` committed from store context packs is a store artifact when the continuity context is part of memory repair/provenance.
-- Future SynAxes/SynPunkt closures should commit to `closures/` first when they express symbolic selection, human commit metadata, or Artrhythmetic constraints.
+- Future SynAxes/SynPunkt closures should commit to `closures/` first when they express symbolic selection, human commit metadata, or Artrithmetic constraints.
 
 **LatentSubstrate / SQLite responsibility**
 - `app/substrate/db.py` uses SQLite for sessions, events, entities, relations, artifact index records, jobs, and metadata/provenance lookup. Keep this as the local operational substrate and query index.
 - `POST /substrate/artifacts`, `/substrate/events`, `/substrate/entities`, `/substrate/relations`, and `/substrate/query` remain the app-wide operational API for runtime events, UI artifacts, render outputs, and cross-app provenance queries.
-- LatentSubstrate artifacts that duplicate store records should be treated as mirrors or compatibility bridges unless the artifact type is outside Artrhythmetic memory scope.
-- The SQLite file is not the canonical ontology for Artrhythmetic memory. If SQLite and store records disagree about a source/chunk/memory/closure/trace, the store record wins.
+- LatentSubstrate artifacts that duplicate store records should be treated as mirrors or compatibility bridges unless the artifact type is outside Artrithmetic memory scope.
+- The SQLite file is not the canonical ontology for Artrithmetic memory. If SQLite and store records disagree about a source/chunk/memory/closure/trace, the store record wins.
 
 **Generated accelerator responsibility**
 - `artrhythmetic_store/indexes/` remains disposable: symbolic, lexical, relation, and vector manifests can be rebuilt from canonical records.
@@ -305,7 +305,7 @@
 
 **Artifact/provenance mirror responsibility**
 - `ui.context_graph`, `ui.prompt_chain`, `text.summary`, `text.prompt`, `json.metrics`, `audio.tts`, `text.transcript`, render artifacts, and SynAxes result artifacts should remain valid LatentSubstrate artifacts with provenance.
-- When such artifacts become inputs to Artrhythmetic retrieval, store records should reference their artifact ids or payloads explicitly; the store should not scrape opaque artifact indexes.
+- When such artifacts become inputs to Artrithmetic retrieval, store records should reference their artifact ids or payloads explicitly; the store should not scrape opaque artifact indexes.
 - Bridge artifacts such as `bridge.ui_context_graph` and `chat.thread` snapshots are compatibility/provenance handles, not canonical memory records.
 
 **Legacy compatibility path**
@@ -326,7 +326,7 @@
   - [x] `artrhythmetic_store.accelerators.vector`
   - [x] `artrhythmetic_store.accelerators.sqlite`
 - [x] (v1) Add migration/export commands:
-  - [x] existing Artrhythmetic Memory documents -> Artrhythmetic Store records
+  - [x] existing Artrithmetic Memory documents -> Artrithmetic Store records
   - [x] existing SynTree context graphs -> store context records
   - [x] existing substrate artifacts -> store artifact mirrors where appropriate
 
@@ -361,7 +361,7 @@
   - [x] session artifact links trace/provenance
 
 ## M) Suggested execution order
-1. [x] Update `Artrhythmetic_Memory_Capability_Spec.md` with Artrhythmetic Store naming and truth-vs-index rule.
+1. [x] Update `STFX_Memory_Capability_Spec.md` with Artrithmetic Store naming and truth-vs-index rule.
 2. [x] Scaffold `app/artrhythmetic_store/`.
 3. [x] Implement workspace layout, manifest, schemas, and atomic IO.
 4. [x] Implement markdown/text ingest into source + chunk records.

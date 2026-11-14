@@ -15,7 +15,7 @@
 
 ## Priority guide
 - **v0 MVP**: SynAxes forms and commits human-reviewed `ui.closure` artifacts backed by the Hub substrate, and can run one projection+cluster workflow to propose closure drafts.
-- **v1 Artrhythmetic Store bridge**: memory-bearing closures should also commit canonical `artrhythmetic_store/closures/` records with symbolic constraints and provenance.
+- **v1 Artrithmetic Store bridge**: memory-bearing closures should also commit canonical `artrhythmetic_store/closures/` records with symbolic constraints and provenance.
 - **v1**: broaden job suite (bridges/hubs/embeddings), improve provenance display, support “dreaming” pipelines at scale.
 - **later**: large-corpus acceleration, hosted analytics packs, enterprise reporting.
 
@@ -70,7 +70,7 @@
 
 ## F) Minimal v0 milestone
 - [x] (v0) UI can select a dataset from substrate, run `synaxes.project+cluster`, visualize results, and **commit a `ui.closure`** to substrate with provenance.
-- [x] (v1) When a committed closure has Artrhythmetic memory significance, also commit it to Artrhythmetic Store `closures/` via `/artrhythmetic-store/closures/commit`.
+- [x] (v1) When a committed closure has Artrithmetic memory significance, also commit it to Artrithmetic Store `closures/` via `/artrhythmetic-store/closures/commit`.
 
 ## G) Closure Map orientation (V2 — see ADR 0015)
 Canonical concept: `synesyn/docs/concepts/closure-map.md`  

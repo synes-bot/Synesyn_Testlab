@@ -1,17 +1,17 @@
-# To‑Do — Artrhythmetic Memory (symbolic deterministic memory capability)
+# To‑Do — Artrithmetic Memory (symbolic deterministic memory capability)
 
 **Primary spec references**
-- `../Artrhythmetic_Memory_Capability_Spec.md`
+- `../../docs/implementation_docs/STFX_Memory_Capability_Spec.md`
 - `../Synesyn_Platform_Technical_Architecture.md`
 - `../Synesyn_Hub_API_Spec.md`
 - `../LatentSubstrate_Data_Model.md`
 
 **Prototype reference only**
-- `stochasticdreams_visualsystem/Artrhythmetic/artrhythmetic-database_system/ARTRHYTHMETIC_MEMORY_README.md`
-- `stochasticdreams_visualsystem/Artrhythmetic/artrhythmetic-database_system/artrhythmetric_memory.py`
+- `stochasticdreams_visualsystem/Artrithmetic/artrhythmetic-database_system/ARTRHYTHMETIC_MEMORY_README.md`
+- `stochasticdreams_visualsystem/Artrithmetic/artrhythmetic-database_system/artrhythmetric_memory.py`
 
 **What’s already covered**
-- The philosophy, boundaries, and canonical home are defined in `../Artrhythmetic_Memory_Capability_Spec.md`.
+- The philosophy, boundaries, and canonical home are defined in `../../docs/implementation_docs/STFX_Memory_Capability_Spec.md`.
 - This checklist focuses on implementation order, scaffold shape, and concrete tasks.
 
 ---
@@ -40,7 +40,7 @@
   - [ ] no imports from `ScenSyn/`
   - [ ] no imports from `stochasticdreams_visualsystem/`
   - [ ] no app-specific terms in canonical data models
-- [ ] (v0) Treat `stochasticdreams_visualsystem/Artrhythmetic/artrhythmetic-database_system/` as reference only, not runtime home.
+- [ ] (v0) Treat `stochasticdreams_visualsystem/Artrithmetic/artrhythmetic-database_system/` as reference only, not runtime home.
 
 ## B) Seed registry and symbolic engine
 - [x] (v0) Implement canonical Odù seed registry with named families:
