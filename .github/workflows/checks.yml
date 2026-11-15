@@ -117,6 +117,12 @@ jobs:
           chmod +x utilities/checks/run_readymade_acceptance.sh
           GODOT_BIN="$(command -v godot)" utilities/checks/run_readymade_acceptance.sh
 
+      - name: SynTree embedding-model unit tests
+        run: |
+          set -euo pipefail
+          chmod +x utilities/checks/run_syntree_embedding_tests.sh
+          GODOT_BIN="$(command -v godot)" utilities/checks/run_syntree_embedding_tests.sh
+
   synaxes-headless-discover:
     runs-on: ubuntu-latest
     steps:
