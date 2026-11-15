@@ -6,8 +6,9 @@ name: Checks
 #
 # ScenSyn harness specs are not run here (live hub session). ReadyMade has a
 # headless acceptance scene that only needs Godot + LimboAI binaries; that job
-# is wired below. Recommended / tested-with builds (not shipped by Synesyn)
-# live in utilities/checks/tool_versions.env — users install them themselves.
+# is wired below. SynAxes headless discover (REQ-NDP-024) uses the same Godot
+# pin. Recommended / tested-with builds (not shipped by Synesyn) live in
+# utilities/checks/tool_versions.env — users install them themselves.
 
 on:
   push:
@@ -115,3 +116,55 @@ jobs:
           godot --headless --path synesyn_client --import --quit-after 60
           chmod +x utilities/checks/run_readymade_acceptance.sh
           GODOT_BIN="$(command -v godot)" utilities/checks/run_readymade_acceptance.sh
+
+  synaxes-headless-discover:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Load recommended tool versions
+        id: pins
+        run: |
+          set -euo pipefail
+          # shellcheck disable=SC1091
+          source utilities/checks/tool_versions.env
+          {
+            echo "godot_version=${GODOT_VERSION}"
+            echo "godot_url=${GODOT_DOWNLOAD_URL}"
+            echo "godot_sha256=${GODOT_SHA256}"
+            echo "godot_zip=${GODOT_ZIP_NAME}"
+            echo "limboai_version=${LIMBOAI_VERSION}"
+            echo "limboai_url=${LIMBOAI_DOWNLOAD_URL}"
+            echo "limboai_sha256=${LIMBOAI_SHA256}"
+            echo "limboai_zip=${LIMBOAI_ZIP_NAME}"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Install Godot (recommended / tested-with)
+        run: |
+          set -euo pipefail
+          curl -fsSL -o /tmp/godot.zip "${{ steps.pins.outputs.godot_url }}"
+          echo "${{ steps.pins.outputs.godot_sha256 }}  /tmp/godot.zip" | sha256sum -c -
+          sudo unzip -o /tmp/godot.zip -d /usr/local/bin
+          GODOT_BIN_NAME="$(basename "${{ steps.pins.outputs.godot_zip }}" .zip)"
+          sudo mv "/usr/local/bin/${GODOT_BIN_NAME}" /usr/local/bin/godot
+          sudo chmod +x /usr/local/bin/godot
+          godot --version
+          echo "Recommended Godot (CI tested-with): ${{ steps.pins.outputs.godot_version }}"
+
+      - name: Install LimboAI GDExtension (recommended / tested-with)
+        run: |
+          set -euo pipefail
+          curl -fsSL -o /tmp/limboai.zip "${{ steps.pins.outputs.limboai_url }}"
+          echo "${{ steps.pins.outputs.limboai_sha256 }}  /tmp/limboai.zip" | sha256sum -c -
+          unzip -o /tmp/limboai.zip -d /tmp/limboai
+          mkdir -p synesyn_client/addons/limboai/bin
+          cp -a /tmp/limboai/addons/limboai/bin/. synesyn_client/addons/limboai/bin/
+          test -f synesyn_client/addons/limboai/bin/limboai.gdextension
+          echo "Recommended LimboAI (CI tested-with): ${{ steps.pins.outputs.limboai_version }} (${{ steps.pins.outputs.limboai_zip }})"
+
+      - name: Import project + run SynAxes headless discover
+        run: |
+          set -euo pipefail
+          godot --headless --path synesyn_client --import --quit-after 60
+          chmod +x utilities/checks/run_synaxes_headless_discover.sh
+          GODOT_BIN="$(command -v godot)" utilities/checks/run_synaxes_headless_discover.sh
