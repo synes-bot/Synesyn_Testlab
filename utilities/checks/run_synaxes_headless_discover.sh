@@ -7,6 +7,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 CLIENT="$ROOT/synesyn_client"
 SCRIPT="res://addons/synaxes/tests/test_headless_discover.gd"
 PERSIST_SCRIPT="res://addons/synaxes/tests/test_persist_demo_analysis.gd"
+LABELS_SCRIPT="res://addons/synaxes/tests/test_theme_labels.gd"
 
 GODOT_BIN="${GODOT_BIN:-}"
 if [[ -z "$GODOT_BIN" ]]; then
@@ -50,4 +51,5 @@ run_godot_script() {
 
 run_godot_script "$SCRIPT" "SynAxes headless discover: all passed" "SynAxes headless discover"
 run_godot_script "$PERSIST_SCRIPT" "SynAxes persist demo analysis: all passed" "SynAxes persist demo analysis"
+run_godot_script "$LABELS_SCRIPT" "SynAxes theme labels: all passed" "SynAxes theme labels"
 exit 0
