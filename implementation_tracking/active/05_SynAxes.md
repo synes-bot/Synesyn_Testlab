@@ -27,7 +27,7 @@
 ## B) LatentSubstrate integration
 - [x] (v0) Implement “import from substrate”:
   - [x] (v0) query entity/artifact sets for analysis (imports `ui.context_graph` for dataset selection)
-  - [x] (v1) fetch embeddings if present (or request embedding job) (submits `synaxes.embed_text` when enabled)
+  - [x] (v1) fetch embeddings if present (import existing `synaxes.embeddings` artifacts; Tier 3 Model themes call the SynTree embedding provider directly — the client does **not** submit hub `synaxes.embed_text` for Model themes; hub embed jobs remain available for future/hash pipelines)
 - [x] (v0) Implement “write results to substrate”:
   - [x] (v0) cluster artifacts (`graph.cluster_result`)
   - [x] (v0) projection artifacts (`coords.projection_2d/3d`)
@@ -101,6 +101,7 @@ then **D** (app hook), **E** (reload), **F** (headless discovery).
 - [x] (A) Advanced collapse + step spine + empty CTA + Overview-first + Work on this (`REQ-NDP-001`–`005`)
 - [x] (A) Correct stale “not yet wired to substrate” / “4D canvas” claims (`REQ-NDP-014`, pulled forward from C)
 - [x] (B) Disclosed model-embedding opt-in (no silent egress), latest context-graph CTA, post-commit hand-off via host navigation signal, plain Orientation/Coverage, human discover summary (`REQ-NDP-006`–`010`)
+- [x] (B+) Model themes use SynTree **embedding** model (not chat model); consent remains per provider; cache/provenance key provider + embedding model id + dim; dim mismatch invalidates / falls back to TF-IDF. Hub `synaxes.embed_text` hash-job alignment is a separate follow-up.
 - [x] (C) Tools/README/user-guide copy refresh incl. drop-in story (`REQ-NDP-011`–`013`)
 - [x] (D) Delete dead Metapunkt interface duplicate; headless commit args on the closure controller; Metapunkt API; one propose-themes app entry that opens the dock preloaded (`REQ-NDP-025`, `015`, `016`) — Workshop Session Record **Propose themes** → Tools/SynAxes with session import + discover queued + Closures focus; full headless discovery remains Phase F
 - [x] (E) Reload last analysis run (`REQ-NDP-017`) — `Reload last analysis` button near Discover; hub pipeline loads latest `json.analysis_run` + projection/cluster into Pattern Space without re-import
