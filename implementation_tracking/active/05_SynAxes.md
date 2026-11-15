@@ -15,7 +15,7 @@
 
 ## Priority guide
 - **v0 MVP**: SynAxes forms and commits human-reviewed `ui.closure` artifacts backed by the Hub substrate, and can run one projection+cluster workflow to propose closure drafts.
-- **v1 Artrhythmetic Store bridge**: memory-bearing closures should also commit canonical `artrhythmetic_store/closures/` records with symbolic constraints and provenance.
+- **v1 STFX Store bridge**: memory-bearing closures should also commit canonical `stfx_store/closures/` records with symbolic constraints and provenance.
 - **v1**: broaden job suite (bridges/hubs/embeddings), improve provenance display, support “dreaming” pipelines at scale.
 - **later**: large-corpus acceleration, hosted analytics packs, enterprise reporting.
 
@@ -54,7 +54,8 @@
   - [x] (v0) chosen dataset (entity ids)
   - [x] (v0) chosen method + parameters
   - [x] (v0) output artifacts created
-- [ ] (v0) Surface provenance in the UI (“this cluster came from X, using Y params”).
+- [x] (v0) Surface provenance in the UI (“this cluster came from X, using Y params”).
+  - Closure Editor `EditorProvenanceLabel` shows discovery method, dim-reduction, k, embedding tier, Hub-vs-local path, and analysis/projection/cluster/bridges/hubs artifact ids (`synaxes_runtime_controller.gd::_update_provenance_display`).
   - [x] (v1) Surface artifact ids in the UI status panel for traceability (analysis/projection/cluster/bridges/hubs).
 - [x] (v0) Add a **Closure Editor** (writes `ui.closure` artifacts):
   - [x] (v0) selection criteria + pins/constraints
@@ -70,16 +71,17 @@
 
 ## F) Minimal v0 milestone
 - [x] (v0) UI can select a dataset from substrate, run `synaxes.project+cluster`, visualize results, and **commit a `ui.closure`** to substrate with provenance.
-- [x] (v1) When a committed closure has Artrhythmetic memory significance, also commit it to Artrhythmetic Store `closures/` via `/artrhythmetic-store/closures/commit`.
+- [x] (v1) When a committed closure has STFX memory significance, also commit it to STFX Store `closures/` via `/stfx-store/closures/commit`.
 
 ## G) Closure Map orientation (V2 — see ADR 0015)
-Canonical concept: `synesyn/docs/concepts/closure-map.md`  
-Product spike: `synesyn/docs/product-requirements/PRD-SYNAXES-CLOSURE-MAP-ORIENTATION.md`
+Canonical concept: `docs/concepts/closure-map.md`  
+Product spike: `docs/product-requirements/PRD-SYNAXES-CLOSURE-MAP-ORIENTATION.md`
 
 - [x] (docs) Canonical Closure Map + ADR 0015 (Distal / Deep · Recursive Closure / Proxistance; not physics-4D).
 - [x] (v2) Human-first A–D orientation on Dream Inbox / Closure Editor (`REQ-CMO-001`).
 - [x] (v2) Persist optional `orientation` on `ui.closure` schema_version 2 (`REQ-CMO-002`).
 - [x] (v2) Saved Closures badges + coverage strip (`REQ-CMO-003`, `REQ-CMO-004`).
+- [ ] (manual QA) Live-Hub pass for orientation tag → commit → reload coverage (REQ-CMO-001–005).
 - [ ] (later) Tetrahedral edge hints once tags exist; Proxistance-first navigation UX.
 - [x] (A / REQ-NDP-014) Refresh technical-review / platform-architecture “4D canvas” wording to point at ADR 0015 (Proxistance / Closure Map orientation).
 
@@ -89,7 +91,7 @@ Product spike: `synesyn/docs/product-requirements/PRD-SYNAXES-CLOSURE-MAP-ORIENT
 - [ ] (later) Optional ClosureRouter.audit() packaging when Open Closure ships with hub.
 
 ## I) Navigable default path (PRD-SYNAXES-NAVIGABLE-DEFAULT-PATH)
-Product plan: `synesyn/docs/product-requirements/PRD-SYNAXES-NAVIGABLE-DEFAULT-PATH.md`
+Product plan: `docs/product-requirements/PRD-SYNAXES-NAVIGABLE-DEFAULT-PATH.md`
 
 Ship order: **0** (shared core, lands alone) → **A → B → C** (minimum honest sell),
 then **D** (app hook), **E** (reload), **F** (headless discovery).
