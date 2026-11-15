@@ -19,6 +19,9 @@ const EmbeddingCacheScript = preload(
 const RuntimeConfigScript = preload(
 	"res://addons/synesyn_core/scripts/runtime_config.gd"
 )
+const StatusHubControllerScript = preload(
+	"res://addons/syntree/scripts/ui/panel/status_hub_controller.gd"
+)
 
 
 func _init() -> void:
@@ -35,6 +38,7 @@ func _run_test() -> void:
 	_test_manager_persistence(failures)
 	_test_dim_mismatch_cache(failures)
 	_test_scene_has_embedding_row(failures)
+	_test_status_strip_resolution(failures)
 
 	if failures.is_empty():
 		print("Embedding model selection tests: all passed")
@@ -278,3 +282,113 @@ func _test_scene_has_embedding_row(failures: Array[String]) -> void:
 		failures.append("syntree_panel.tscn must include EmbeddingModelSelector")
 	if not has_pull:
 		failures.append("syntree_panel.tscn must include PullEmbeddingModelButton")
+
+
+func _test_status_strip_resolution(failures: Array[String]) -> void:
+	## Regression: UI shows Ollama/llama3.2 but strip said openai / ? when the
+	## manager was empty and the API-provider dropdown still defaulted to OpenAI.
+	var model_selector := OptionButton.new()
+	root.add_child(model_selector)
+	model_selector.add_item("-- Ollama --")
+	model_selector.set_item_disabled(0, true)
+	model_selector.add_item("llama3.2  [embed]")
+	model_selector.set_item_metadata(1, "llama3.2")
+	model_selector.select(1)
+
+	var provider_selector := OptionButton.new()
+	root.add_child(provider_selector)
+	provider_selector.add_item("OpenAI")
+	provider_selector.set_item_metadata(0, "openai")
+	provider_selector.add_item("Ollama")
+	provider_selector.set_item_metadata(1, "ollama")
+	provider_selector.select(0)  # stale default — must NOT win over model metadata
+
+	var fake_manager := _FakeStatusModelManager.new()
+	fake_manager.current_model = ""
+	fake_manager.embedding_model = "nomic-embed-text"
+	fake_manager.embedding_provider = "ollama"
+
+	var resolved: Dictionary = StatusHubControllerScript.resolve_active_provider_model(
+		fake_manager,
+		model_selector,
+		provider_selector
+	)
+	if String(resolved.get("model", "")) != "llama3.2":
+		failures.append(
+			"status strip should resolve model from selector metadata, got '%s'"
+			% String(resolved.get("model", ""))
+		)
+	if String(resolved.get("provider", "")) != "ollama":
+		failures.append(
+			"status strip should resolve provider from manager for UI model, got '%s'"
+			% String(resolved.get("provider", ""))
+		)
+
+	# Manager current model wins over UI.
+	fake_manager.current_model = "gemma4:26b"
+	var resolved_mgr: Dictionary = StatusHubControllerScript.resolve_active_provider_model(
+		fake_manager,
+		model_selector,
+		provider_selector
+	)
+	if String(resolved_mgr.get("model", "")) != "gemma4:26b":
+		failures.append("manager current model should win over selector")
+	if String(resolved_mgr.get("provider", "")) != "ollama":
+		failures.append("manager provider for gemma4:26b should be ollama")
+
+	var embed_suffix: String = StatusHubControllerScript.format_embedding_status_suffix(
+		fake_manager
+	)
+	if embed_suffix != " | Embed: ollama/nomic-embed-text":
+		failures.append(
+			"embedding status suffix wrong: '%s'" % embed_suffix
+		)
+	fake_manager.embedding_model = ""
+	var local_suffix: String = StatusHubControllerScript.format_embedding_status_suffix(
+		fake_manager
+	)
+	if local_suffix != " | Embed: local":
+		failures.append("empty embedding selection should show Embed: local")
+
+	# Strip badge suffixes from display text fallback.
+	var cleaned: String = StatusHubControllerScript._strip_model_display_suffixes(
+		"nomic-embed-text  [embed]"
+	)
+	if cleaned != "nomic-embed-text":
+		failures.append("badge strip failed: '%s'" % cleaned)
+
+	model_selector.queue_free()
+	provider_selector.queue_free()
+
+
+class _FakeStatusModelManager:
+	extends RefCounted
+
+	var current_model: String = ""
+	var embedding_model: String = ""
+	var embedding_provider: String = ""
+
+	func get_current_model() -> String:
+		return current_model
+
+	func get_provider_for_model(model_name: String) -> String:
+		var resolved: String = model_name.strip_edges()
+		if resolved.is_empty():
+			return ""
+		# Enough for the status-strip unit test.
+		if (
+			resolved.begins_with("llama")
+			or resolved.begins_with("gemma")
+			or resolved.begins_with("nomic")
+			or resolved.begins_with("all-minilm")
+		):
+			return "ollama"
+		if resolved.begins_with("gpt") or resolved.begins_with("text-embedding"):
+			return "openai"
+		return "ollama"
+
+	func get_current_embedding_model() -> String:
+		return embedding_model
+
+	func get_current_embedding_provider() -> String:
+		return embedding_provider
