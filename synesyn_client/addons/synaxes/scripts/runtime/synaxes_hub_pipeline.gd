@@ -54,12 +54,19 @@ func persist_embedding_artifact(
 		"contents": contents_map,
 		"dim": vectors_map.values()[0].size() if not vectors_map.is_empty() else 0,
 	}
+	var embedding_dim: int = (
+		int(vectors_map.values()[0].size())
+		if not vectors_map.is_empty() and typeof(vectors_map.values()[0]) == TYPE_ARRAY
+		else 0
+	)
 	var meta := {
 		"provenance": {
 			"generated_by": "synaxes.embed",
 			"embedding_tier": embedding_tier,
 			"model_provider": model_provider,
 			"model_name": model_name,
+			"embedding_model": model_name,
+			"dim": embedding_dim,
 			"item_count": item_ids.size(),
 			"inputs": [],
 		}
