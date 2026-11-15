@@ -124,6 +124,8 @@ const SUPPORTED_CONTENT_EXTENSIONS = [
 @onready var thread_hub_versions_popup: PopupPanel = get_node_or_null("%ThreadHubVersionsPopup")
 @onready var thread_hub_versions_list: ItemList = get_node_or_null("%ThreadHubVersionsList")
 @onready var ai_model_selector: OptionButton = %AIModelSelector
+@onready var embedding_model_selector: OptionButton = get_node_or_null("%EmbeddingModelSelector")
+@onready var pull_embedding_model_button: Button = get_node_or_null("%PullEmbeddingModelButton")
 @onready var ollama_status_label: Label = %OllamaStatusLabel
 @onready var ollama_endpoint_input: LineEdit = %OllamaEndpointInput
 @onready var apply_ollama_endpoint_button: Button = %ApplyOllamaEndpointButton
@@ -887,12 +889,15 @@ func _setup_model_settings_controller() -> void:
 			ollama_endpoint_input,
 			Callable(self, "_show_error_dialog"),
 			Callable(self, "_emit_operation_failed"),
-			"gemma4:26b"
+			"gemma4:26b",
+			embedding_model_selector,
+			pull_embedding_model_button
 		)
 		# Populate the model selector immediately whenever a valid manager is injected.
 		# This provides a fallback if the bootstrap's explicit call is missed (build timing).
 		if is_instance_valid(_ai_model_manager):
 			_model_settings_controller.populate_model_selector()
+			_model_settings_controller.populate_embedding_selector()
 func _setup_chat_panel_controller() -> void:
 	# Domain controller for conversation UI behavior.
 	if not is_instance_valid(_chat_panel_controller):

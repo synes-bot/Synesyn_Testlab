@@ -108,14 +108,29 @@ func _update_status_async() -> void:
 	if model.is_empty():
 		model = "?"
 
-	# Check embedding capability for the active model's provider
+	# Selected embedding model (independent of chat). Empty → local TF-IDF.
 	var embed_text := ""
-	if is_instance_valid(_ai_model_manager) and _ai_model_manager.has_method("get_provider_loader"):
-		var loader: Variant = _ai_model_manager.get_provider_loader(provider)
-		if loader and loader.has_method("supports_embeddings") and loader.supports_embeddings():
-			embed_text = " | Embeddings: yes"
+	if is_instance_valid(_ai_model_manager):
+		var embed_model: String = ""
+		var embed_provider: String = ""
+		if _ai_model_manager.has_method("get_current_embedding_model"):
+			embed_model = String(
+				_ai_model_manager.get_current_embedding_model()
+			).strip_edges()
+		if _ai_model_manager.has_method("get_current_embedding_provider"):
+			embed_provider = String(
+				_ai_model_manager.get_current_embedding_provider()
+			).strip_edges()
+		if embed_model.is_empty():
+			embed_text = " | Embeddings: local TF-IDF"
 		else:
-			embed_text = " | Embeddings: no"
+			embed_text = " | Embeddings: %s/%s" % [embed_provider, embed_model]
+		# Also note whether the active chat model itself is embed-capable.
+		if (
+			_ai_model_manager.has_method("model_supports_embeddings")
+			and _ai_model_manager.model_supports_embeddings(provider, model)
+		):
+			embed_text += " | chat [embed]"
 
 	var status_text := "%s | %s | Provider: %s | Model: %s%s" % [hub_text, voice_text, provider, model, embed_text]
 	if is_instance_valid(_status_strip_label):
