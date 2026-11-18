@@ -183,7 +183,7 @@ func _ready() -> void:
 			add_child(camera)
 			print("Created Camera3D in _ready")
 	
-	# Check for debug info
+	# Check for debug info — hidden by default (Advanced → Show debug overlay).
 	if has_node("DebugInfo"):
 		debug_info = get_node("DebugInfo")
 		print("Found DebugInfo in _ready")
@@ -201,6 +201,8 @@ func _ready() -> void:
 		canvas_layer.add_child(label)
 		debug_info = label
 		print("Created DebugInfo in _ready")
+	if debug_info:
+		debug_info.visible = false
 	
 	# Load required scenes if not set
 	if not pattern_node_scene:
@@ -628,8 +630,37 @@ func _focus_on_selection() -> void:
 		_target_zoom = clamp(_current_zoom * 0.6, 2.0, 15.0)
 		_update_camera_target()
 
+func set_debug_overlay_visible(is_on: bool) -> void:
+	## FPS / selection overlay — off by default; Advanced debug toggle opts in.
+	if debug_info:
+		debug_info.visible = is_on
+
+
+func _pattern_billboard_text(pattern, pattern_id: int) -> String:
+	var meta: Dictionary = {}
+	if pattern != null and typeof(pattern.metadata) == TYPE_DICTIONARY:
+		meta = pattern.metadata
+	var provisional: String = str(meta.get("provisional_label", "")).strip_edges()
+	if not provisional.is_empty():
+		if provisional.length() > 28:
+			return provisional.left(25) + "…"
+		return provisional
+	var label_text: String = pattern.pattern_type if not pattern.pattern_type.is_empty() else "P%d" % pattern_id
+	if pattern.items.size() > 0:
+		var first_item: Variant = pattern.items[0]
+		if typeof(first_item) == TYPE_DICTIONARY:
+			var content := str((first_item as Dictionary).get("content", ""))
+			if content.length() > 25:
+				content = content.left(22) + "..."
+			if not content.is_empty():
+				label_text = content
+	return label_text
+
+
 func _update_debug_info() -> void:
 	if not debug_info:
+		return
+	if not debug_info.visible:
 		return
 		
 	var fps = Engine.get_frames_per_second()
@@ -687,20 +718,17 @@ func create_pattern_visualization(pattern_id: int) -> void:
 		# Set meta data to identify this pattern
 		node.set_meta("pattern_id", pattern_id)
 		
-		# Update label — show pattern type + short preview from items
+		# Update label — prefer provisional theme label; fall back to short preview.
 		var label_node = node.get_node_or_null("Label3D")
 		if label_node:
-			var label_text: String = pattern.pattern_type if not pattern.pattern_type.is_empty() else "P%d" % pattern_id
-			# Try to get a content preview from the first item
-			if pattern.items.size() > 0:
-				var first_item: Variant = pattern.items[0]
-				if typeof(first_item) == TYPE_DICTIONARY:
-					var content := str((first_item as Dictionary).get("content", ""))
-					if content.length() > 25:
-						content = content.left(22) + "..."
-					if not content.is_empty():
-						label_text = content
+			var label_text: String = _pattern_billboard_text(pattern, pattern_id)
 			label_node.text = label_text
+			if label_node is Label3D:
+				var l3: Label3D = label_node as Label3D
+				l3.font_size = 32
+				l3.outline_size = 8
+				l3.pixel_size = 0.01
+				l3.modulate = Color(0.95, 0.95, 1, 0.92)
 		
 		# Set up collision for picking
 		var body = node.get_node_or_null("PatternBody")

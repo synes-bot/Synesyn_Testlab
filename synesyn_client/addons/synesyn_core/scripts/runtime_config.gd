@@ -446,6 +446,10 @@ static func default_config() -> Dictionary:
 			# - <app_root>/services/synesyn_hub/synesyn_hub.exe
 			# - <app_root>/../services/synesyn_hub/synesyn_hub.exe
 			"exec_path": "",
+			# Editor/source runs only (never exported builds). When the hub binary is
+			# absent, start `python -m app.main` from services/synesyn_hub. Default off
+			# so a generic checkout does not spawn Python unless the operator opts in.
+			"autostart_from_source": false,
 			# Optional hub auth (shared across apps).
 			# When enabled, clients send: Authorization: Bearer <token>
 			"auth": {
@@ -513,6 +517,12 @@ static func default_config() -> Dictionary:
 				# hamburger menu, SynTree panel, etc.). Restored on startup so the
 				# choice survives project reloads; empty string means "auto-select".
 				"selected_model": "",
+				# Dedicated embedding model for SynAxes Model themes and other
+				# Tier-3 embedding callers. Independent of selected_model (chat).
+				# Empty string → no model embeddings; callers fall back to local TF-IDF.
+				"selected_embedding_model": "",
+				# Provider id for selected_embedding_model ("ollama" | "openai" | …).
+				"selected_embedding_provider": "",
 				# Optional substrate persistence for "important outputs" (metaprompts/analyses).
 				# When enabled, SynTree will best-effort persist prompt/summary/metrics artifacts to the Hub substrate.
 				# Keep false by default to avoid surprising storage/volume and to preserve privacy-by-default.

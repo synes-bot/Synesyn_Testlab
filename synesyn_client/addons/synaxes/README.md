@@ -4,7 +4,7 @@ Walk your material as a space and leave with a few closures you can stand behind
 
 SynAxes is the **Synthesize** layer of the Synesyn stack: import material, discover patterns, review candidates, and **explicitly commit** versioned `ui.closure` artifacts. Other modules (SynPunkt, SynTree, ScenSyn) consume those closures; they should not re-implement SynAxes discovery.
 
-**Status:** V1 complete (import → embed → discover → curate → commit). V2 is **Closure Map orientation + Proxistance** (ADR 0015) — not a physics spacetime canvas. Orientation tags and Coverage exist; fuller Proxistance navigation UX remains later work.
+**Status:** V1 complete (import → embed → discover → curate → commit). V2 is **Closure Map orientation + Proxistance** (ADR 0015) — not a physics spacetime canvas. Orientation tags and Coverage are implemented in code; a live-Hub manual QA pass for orientation tagging remains outstanding. Fuller Proxistance navigation UX remains later work.
 
 ---
 
@@ -24,7 +24,7 @@ Open **Tools → SynAxes**. Default spine:
 
 **Human commit:** Machine proposals are editable; only explicit commit creates a canonical artifact (no silent overwrite). Model embeddings (when offered) require a disclosed, remembered opt-in — item text is not sent to a third-party provider silently.
 
-Facilitator one-pager: `synesyn/docs/user-guide/synaxes.md`. Pipeline context: `synesyn/docs/user-guide/facilitator-workflow.md`.
+Facilitator one-pager: `docs/user-guide/synaxes.md`. Pipeline context: `docs/user-guide/facilitator-workflow.md`.
 
 Power controls (discovery method, dim-reduction, Hub jobs, embedding tier, cache stats) live under **Advanced**.
 
@@ -41,7 +41,7 @@ addons/synesyn_core/   ← required (enable first)
 addons/synaxes/        ← this addon
 ```
 
-Verified expectation: `synesyn_core` + SynAxes parses and enables in a clean Godot 4 project (headless script load). See `addons/synesyn_core/README.md` and `synesyn/docs/architectural-decisions/0017-synesyn-core-shared-library-addon.md`.
+Verified expectation: `synesyn_core` + SynAxes parses and enables in a clean Godot 4 project (headless script load). See `addons/synesyn_core/README.md` and `docs/architectural-decisions/0017-synesyn-core-shared-library-addon.md`.
 
 Optional host theme `.tres` packs (typically under ScenSyn) may skin scenes when present; absence must not prevent the addon from loading.
 
@@ -93,13 +93,13 @@ Enable under Project → Project Settings → Plugins (`synesyn_core` before Syn
 
 ### Further reading (repo-relative)
 
-- `synesyn/docs/user-guide/synaxes.md`
-- `synesyn/docs/concepts/closure-map.md`
-- `synesyn/docs/architectural-decisions/0015-synaxes-v2-closure-map-orientation.md`
-- `synesyn/docs/architectural-decisions/0017-synesyn-core-shared-library-addon.md`
-- `synesyn/docs/product-requirements/PRD-SYNAXES-NAVIGABLE-DEFAULT-PATH.md`
-- `synesyn/docs/implementation_docs/SynAxes_Embeddings_Pipeline.md`
-- `synesyn/implementation_tracking/active/05_SynAxes.md`
+- `docs/user-guide/synaxes.md`
+- `docs/concepts/closure-map.md`
+- `docs/architectural-decisions/0015-synaxes-v2-closure-map-orientation.md`
+- `docs/architectural-decisions/0017-synesyn-core-shared-library-addon.md`
+- `docs/product-requirements/PRD-SYNAXES-NAVIGABLE-DEFAULT-PATH.md`
+- `docs/implementation_docs/SynAxes_Embeddings_Pipeline.md`
+- `implementation_tracking/active/05_SynAxes.md`
 
 ---
 

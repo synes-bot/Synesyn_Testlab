@@ -13,7 +13,7 @@ This is a facilitator-facing guide to running a Synesyn session using the Metapu
   - **Full features**: Run the **Hub** (recommended). This enables artifact persistence, embeddings, voice, and cross-tool provenance.
 - **Confirm the active model**
   - In **Tools → SynTree** (or ScenSyn settings), choose the provider and model.
-  - If you plan to use SynAxes **Model themes** (the opt-in under Advanced), choose a model that supports embeddings (shown as `[embed]` in SynTree).
+  - If you plan to use SynAxes **Model themes** (the opt-in under Advanced), set **Embeddings** in SynTree to a tested embedding model (`nomic-embed-text` or `all-minilm` for Ollama, or `text-embedding-3-small` for OpenAI). The chat-model list still shows `[embed]` on models that can embed; Model themes uses the separate Embeddings selector.
 
 ---
 
@@ -113,5 +113,5 @@ Keep **Advanced** closed unless you need to change the discovery method, dimensi
 ## Troubleshooting quick notes
 
 - **Hub offline**: Voice, embeddings, and artifact publishing require the Hub; basic chat and local session logs still work depending on your model provider.
-- **Model themes unavailable**: Select a provider and model that supports embeddings (marked `[embed]` in SynTree), or stay on local themes (the default).
+- **Model themes unavailable**: In SynTree, choose an embedding model under **Embeddings** (and install it with `ollama pull …` or Pull if using Ollama), grant disclosed consent in SynAxes Advanced, or stay on local themes (the default).
 - **Too much UI on screen**: Hide the Main Menu or Chat Menu in SynTree using the toolbar toggles and bring them back only when needed.

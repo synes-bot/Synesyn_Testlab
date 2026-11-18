@@ -18,8 +18,10 @@ collision_mask = 0
 shape = SubResource("SphereShape3D_k1x2w")
 
 [node name="Label3D" type="Label3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1, 0)
 billboard = 1
+pixel_size = 0.01
+modulate = Color(0.95, 0.95, 1, 0.92)
 text = "Pattern"
-font_size = 16
-outline_size = 2 
+font_size = 32
+outline_size = 8 

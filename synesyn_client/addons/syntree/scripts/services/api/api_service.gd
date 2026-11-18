@@ -555,6 +555,13 @@ func unload_ollama_model(model_id: String) -> Dictionary:
 		return {"success": false, "error": "ollama_busy"}
 	return await _ollama_runtime_service.call("unload_model", model_id)
 
+func pull_ollama_model(model_id: String) -> Dictionary:
+	if not is_instance_valid(_ollama_runtime_service):
+		return {"success": false, "error": "ollama_runtime_unavailable"}
+	if _has_active_provider_request("ollama"):
+		return {"success": false, "error": "ollama_busy"}
+	return await _ollama_runtime_service.call("pull_model", model_id)
+
 func cancel_request(request_id: String) -> Dictionary:
 	var record_any: Variant = _active_request_records.get(request_id)
 	if typeof(record_any) != TYPE_DICTIONARY:

@@ -35,9 +35,12 @@ retained or used for training. If that matters for your participants, check the
 provider's policy and consider a local model instead.
 
 **To your provider's embeddings endpoint**, when SynAxes **Model themes** are
-explicitly enabled under Advanced: the text being analysed is sent to compute
-embeddings. By default, SynAxes stays on local discovery (TF-IDF) and sends
-nothing.
+explicitly enabled under Advanced **and** SynTree has an embedding model
+selected (Tools → SynTree → Embeddings): the text being analysed is sent to
+that provider's embeddings API (Ollama locally, or OpenAI when configured).
+Consent is remembered per provider. By default, SynAxes stays on local
+discovery (TF-IDF) and sends nothing — leave Embeddings on “Local TF-IDF” or
+decline the opt-in.
 
 **To Microsoft**, when spoken output is enabled: the text to be spoken is sent to
 the Edge text-to-speech service. On Windows there is an offline fallback (SAPI),
