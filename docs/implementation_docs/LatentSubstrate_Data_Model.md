@@ -91,6 +91,7 @@ Artifacts should be stored with clear type taxonomy, e.g.:
 - `audio.tts`
 - `audio.input` (optional raw recording; only if explicitly enabled + consented)
 - `json.workflow`, `json.metrics`
+- `json.lumur_room` (room package registered by an external client such as Lumur for provenance; opaque JSON, no Hub schema validator)
 - `json.lipsync` (optional lipsync keyframes for spoken lines)
 - `vector.embedding`
 - `coords.projection_2d`, `coords.projection_3d`
