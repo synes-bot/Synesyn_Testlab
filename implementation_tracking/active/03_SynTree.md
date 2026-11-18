@@ -46,6 +46,14 @@
 - [x] Use discovered context limits conservatively for SynTree source-context trimming: reserve capacity for instructions/history/output and retain the existing 20k-character per-source ceiling.
 - [x] Cover discovery metadata, capability mapping, metrics, NDJSON streaming, and status UI with `test_ollama_integration.gd`.
 
+### B.2) Embedding model selection (independent of chat)
+- [x] Persist `apps.syntree.selected_embedding_model` + `selected_embedding_provider` via RuntimeConfig; expose get/set + signals on `AIModelManager`.
+- [x] Ollama `/api/embed` and OpenAI `/v1/embeddings` use the selected embedding model id (OpenAI default `text-embedding-3-small`).
+- [x] First-class recommended Ollama options: `nomic-embed-text` (default suggestion) and `all-minilm`; show `[not installed]` + `ollama pull` hint; optional explicit Pull via `/api/pull`.
+- [x] Per-model `[embed]` badge (capabilities / heuristics; OpenAI embedding models only); compact Embeddings OptionButton under the chat model picker.
+- [x] Cover persistence, request body, badge logic, and dim-mismatch cache with `test_embedding_model_selection.gd` (CI: `run_syntree_embedding_tests.sh`).
+- [ ] (follow-up) Hub hash jobs / `synaxes.embed_text` provenance alignment — not in this PR.
+
 ## C) LatentSubstrate integration points (optional but strategic)
 - [x] (v0) When SynTree produces important outputs (metaprompts, analyses), optionally persist them as artifacts:
   - [x] (v0) `text.prompt`

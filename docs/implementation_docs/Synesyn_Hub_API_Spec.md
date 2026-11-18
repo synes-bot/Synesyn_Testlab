@@ -231,6 +231,18 @@ separate explicit ClosureBus action. A failed closure delivery retains the Hub
 artifact id for delivery-only retry and does not advance local committed
 lineage.
 
+### GET `/substrate/artifacts/{artifact_id}/content`
+Download an artifact's stored bytes (for remote clients that cannot read Hub-local file URIs).
+
+Behavior:
+- Looks up the artifact index record, resolves its file URI under the workspace artifacts vault, and streams the file.
+- Sets `Content-Type` from the file extension when known (`image/png`, `application/json`, …); otherwise `application/octet-stream`.
+- Returns `404` when the artifact id is unknown, the URI is not a vault-local file, or the file is missing.
+- Rejects path traversal: only files under the workspace artifacts directory are served.
+- Optional Bearer auth applies exactly as for other Hub routes (see auth middleware).
+
+Used by remote clients (for example Lumur’s optional Hub bridge) to fetch `image.generated` and other artifact payloads after a Hub render job completes.
+
 ### PATCH `/substrate/artifacts/{artifact_id}/metadata`
 Partially updates artifact metadata (generic for all artifact types, not render-only).
 
