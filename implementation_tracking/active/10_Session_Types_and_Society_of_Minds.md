@@ -7,7 +7,7 @@
 - `../../../synesyn_client/ScenSyn/THEME_REFACTORING_IMPLEMENTATION_PLAN.md` (historical; introduced the "theme" terminology this doc supersedes)
 
 **Context**
-This document captures decisions from an ongoing strategy conversation about pivoting ScenSyn from a visible 4-agent role-play platform toward a professional, voice-first AI planning tool. See prior discussion: value proposition ("ScenSyn helps organisations reduce the unintended consequences of today's decisions..."), infrastructure audit (Hub, Artrhythmetic Store, ClosureBus, Workshop Catalyst are the strongest existing foundation), the naming decision that "theme" collides with `ThemeManager` (light/dark UI theming) and should become `SessionType`, and a grounded code trace of the actual per-turn call path (`AICharacterAgent` → `DirectorAgent` → `ActorAgent` → `StoryState`) that corrected several assumptions in the original plan (see section E).
+This document captures decisions from an ongoing strategy conversation about pivoting ScenSyn from a visible 4-agent role-play platform toward a professional, voice-first AI planning tool. See prior discussion: value proposition ("ScenSyn helps organisations reduce the unintended consequences of today's decisions..."), infrastructure audit (Hub, STFX Store, ClosureBus, Workshop Catalyst are the strongest existing foundation), the naming decision that "theme" collides with `ThemeManager` (light/dark UI theming) and should become `SessionType`, and a grounded code trace of the actual per-turn call path (`AICharacterAgent` → `DirectorAgent` → `ActorAgent` → `StoryState`) that corrected several assumptions in the original plan (see section E).
 
 **Intent**
 - Replace the current three-theme split (`sustainability`, `cultural_narratives`, `workshop_catalyst`) with two front-facing **Session Types**: **Workshop Catalyst** (professional facilitation/planning) and **Story Catalyst** (narrative/theatrical experiences, absorbing `sustainability` + `cultural_narratives`).
@@ -29,7 +29,7 @@ This document captures decisions from an ongoing strategy conversation about piv
 - **v0**: SessionType renaming scaffolding (mechanical, low risk).
 - **v0.1**: Three themes → two Session Types + Collection tier (content consolidation, regression-tested).
 - **v0.2**: Society of Minds vertical slice for Workshop Catalyst, built on the corrected (batched-call, not parallel-call) architecture in section E.
-- **v1**: Optional "show reasoning" drill-down, per-role model routing, ClosureBus/Artrhythmetic Store trace integration for specialist contributions, character-selection bypass for Workshop Catalyst.
+- **v1**: Optional "show reasoning" drill-down, per-role model routing, ClosureBus/STFX Store trace integration for specialist contributions, character-selection bypass for Workshop Catalyst.
 - **later**: Real concurrent request support in the conversation layer (only then reconsider true-parallel specialist calls), adaptive role count, role-specific tool use, cross-session specialist memory, additional Workshop Catalyst Collections if a genuinely different facilitation methodology is needed.
 
 ---
@@ -133,7 +133,7 @@ The original draft of section D assumed a Kernel-style parallel-agents architect
 - [ ] `DirectorAgent.gd` / `ActorAgent.gd` stay genuinely unchanged — only `AICharacterAgent.gd` gets one clean, session-type-dispatched branch point (E.5).
 - [ ] `StoryState`'s log schema (`{sender, message}`) stays unchanged — Society of Minds only changes *what* gets appended, never the shape of an entry.
 - [ ] Do not attempt concurrent `ConversationManager.chat()` calls until the API layer is verified/upgraded to support multiple in-flight requests (E.1).
-- [ ] Raw specialist contributions must be retained somewhere inspectable (Human Agency UX Contract) — commit to Artrhythmetic Store as a trace rather than an ephemeral in-memory buffer.
+- [ ] Raw specialist contributions must be retained somewhere inspectable (Human Agency UX Contract) — commit to STFX Store as a trace rather than an ephemeral in-memory buffer.
 - [ ] Vote/closure semantics must be explicitly re-scoped for hidden-synthesis mode (E.4), not silently inherited from the visible-dialogue vote mechanism.
 - [ ] `story_catalyst` path must be provably untouched — any change to `AICharacterAgent.gd` needs a regression check that visible-ensemble scenarios still run byte-for-byte the same.
 - [ ] Session Type ↔ Collection dispatch (B.1) stays generic across both Session Types — do not special-case "only `story_catalyst` has Collections" in code, even though only it uses more than one today.

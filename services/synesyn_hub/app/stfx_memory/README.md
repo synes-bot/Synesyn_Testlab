@@ -9,7 +9,7 @@ Canonical implementation home:
 Canonical design references:
 
 - `synesyn/docs/implementation_docs/STFX_Memory_Capability_Spec.md`
-- `synesyn/implementation_tracking/active/07_Artrhythmetic_Memory.md`
+- `synesyn/implementation_tracking/active/07_STFX_Memory.md`
 
 Core commitments:
 
