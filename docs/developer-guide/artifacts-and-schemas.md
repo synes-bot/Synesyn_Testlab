@@ -40,6 +40,7 @@ Related artifact types:
 - `json.workflow`
 - `json.render_request`
 - `json.render_recipe`
+- `json.lumur_room` (external client room package for provenance; e.g. Lumur)
 - `image.generated`
 
 ## Cross-application render entrypoint

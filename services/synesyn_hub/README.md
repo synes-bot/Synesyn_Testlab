@@ -2,6 +2,7 @@
 
 Local-first Python service that provides:
 - LatentSubstrate system-of-record (SQLite + file-backed artifacts) rooted at `~/Documents/Synesyn/<workspace_slug>/`
+- Artifact byte download for remote clients: `GET /substrate/artifacts/{id}/content`
 - UDP sensor ingestion → normalized events → WebSocket broadcast
 - Voice API: `POST /voice/speak` and `POST /voice/transcribe`
 - Session export: `POST /export/session`

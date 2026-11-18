@@ -11,6 +11,12 @@ signal discovery_completed(result: Dictionary)
 const DiscoveryEngine = preload("res://addons/synaxes/scripts/integration/discovery_engine.gd")
 const TextEmbedderScript = preload("res://addons/synaxes/scripts/data_processing/text_embedder.gd")
 const EmbeddingCacheScript = preload("res://addons/synaxes/scripts/data_processing/embedding_cache.gd")
+const EmbeddingModelCatalogScript = preload(
+	"res://addons/syntree/scripts/services/ai/embedding_model_catalog.gd"
+)
+const SynAxesThemeLabelerScript = preload(
+	"res://addons/synaxes/scripts/analysis/synaxes_theme_labeler.gd"
+)
 
 # Dependencies — set by the runtime controller after construction.
 var engine: DiscoveryEngine
@@ -140,13 +146,14 @@ func reload_last_analysis(
 		dim_id = int(hub_result.get("dim_id", dim_id))
 	if hub_result.has("clusters_k"):
 		clusters_k = int(hub_result.get("clusters_k", clusters_k))
+	patterns = _annotate_provisional_labels(patterns)
+	last_patterns = patterns
 	_populate_pattern_viewer(patterns)
 	var hydrated: Array = hub_result.get("hydrated_data", [])
 	last_discover_item_count = hydrated.size() if not hydrated.is_empty() else existing_data.size()
 	var theme_count: int = _count_theme_patterns(patterns)
 	_status(human_discover_summary(theme_count, last_discover_item_count))
-	if bottom_tabs and bottom_tabs.get_tab_count() > 0:
-		bottom_tabs.current_tab = 0
+	# Tab focus is owned by the runtime (Overview after Discover; Closures for Propose-themes).
 	if closure_ctrl:
 		var dream_source: Array = hydrated if not hydrated.is_empty() else existing_data
 		closure_ctrl.all_data = dream_source
@@ -196,7 +203,6 @@ func discover(active_data: Array, context_graph_artifact_id: String = "", all_da
 	else:
 		_status("Discovering patterns on %d selected items…" % active_data.size())
 		patterns = engine.discover_patterns(resolved_method, resolved_dim, resolved_k)
-		last_patterns = patterns
 		if pipeline:
 			var persist_result: Dictionary = await pipeline.persist_analysis_results_to_hub(
 				patterns, active_data, context_graph_artifact_id,
@@ -206,13 +212,14 @@ func discover(active_data: Array, context_graph_artifact_id: String = "", all_da
 			last_cluster_artifact_id = str(persist_result.get("cluster_artifact_id", ""))
 			last_analysis_run_artifact_id = str(persist_result.get("analysis_run_artifact_id", ""))
 
+	patterns = _annotate_provisional_labels(patterns)
+	last_patterns = patterns
 	_populate_pattern_viewer(patterns)
 	last_discover_item_count = active_data.size()
 	var theme_count: int = _count_theme_patterns(patterns)
 	_status(human_discover_summary(theme_count, active_data.size()))
 
-	if bottom_tabs and bottom_tabs.get_tab_count() > 0:
-		bottom_tabs.current_tab = 0
+	# Tab focus is owned by the runtime (Overview after Discover; Closures for Propose-themes).
 
 	if closure_ctrl:
 		var dream_source: Array = all_data if not all_data.is_empty() else active_data
@@ -309,7 +316,8 @@ func human_discover_summary(theme_count: int, item_count: int) -> String:
 
 
 func probe_embed_capability() -> Dictionary:
-	## Returns {capable, provider, model} for the active SynTree model. No network.
+	## Returns {capable, provider, model} for SynTree's selected embedding model.
+	## Independent of the chat model. Empty selection → not capable (TF-IDF).
 	var empty: Dictionary = {"capable": false, "provider": "", "model": ""}
 	var pm_node: Node = _get_plugin_manager()
 	if not pm_node or not pm_node.has_method("get_ai_model_manager"):
@@ -317,18 +325,20 @@ func probe_embed_capability() -> Dictionary:
 	var ai_manager = pm_node.get_ai_model_manager()
 	if not ai_manager:
 		return empty
-	var current_model: String = str(ai_manager.get_current_model()) if ai_manager.has_method("get_current_model") else ""
-	if current_model.is_empty():
-		return empty
+	var embedding_model: String = ""
 	var provider_name: String = ""
-	if ai_manager.has_method("get_provider_for_model"):
-		provider_name = str(ai_manager.get_provider_for_model(current_model))
-	if provider_name.is_empty():
+	if ai_manager.has_method("get_current_embedding_model"):
+		embedding_model = str(ai_manager.get_current_embedding_model()).strip_edges()
+	if ai_manager.has_method("get_current_embedding_provider"):
+		provider_name = str(ai_manager.get_current_embedding_provider()).strip_edges()
+	if embedding_model.is_empty() or provider_name.is_empty():
 		return empty
 	var loader = ai_manager.get_provider_loader(provider_name) if ai_manager.has_method("get_provider_loader") else null
 	if not loader or not loader.has_method("supports_embeddings") or not loader.supports_embeddings():
 		return empty
-	return {"capable": true, "provider": provider_name, "model": current_model}
+	# Ollama recommended models may be selected before install; still "capable"
+	# for consent UI, but the HTTP call will fail and Tier 2 will apply.
+	return {"capable": true, "provider": provider_name, "model": embedding_model}
 
 
 func has_provider_consent(provider_name: String) -> bool:
@@ -400,13 +410,13 @@ func _apply_tier2_tfidf(data: Array) -> void:
 
 
 func _try_tier3_model_embeddings(data: Array, context_graph_artifact_id: String) -> bool:
-	## Attempts to embed data using SynTree's current AI model.
+	## Attempts to embed data using SynTree's selected embedding model.
 	## Caller must have verified preference + per-provider consent (no silent egress).
 	var cap: Dictionary = probe_embed_capability()
 	if not bool(cap.get("capable", false)):
 		return false
 	var provider_name: String = str(cap.get("provider", ""))
-	var current_model: String = str(cap.get("model", ""))
+	var embedding_model: String = str(cap.get("model", ""))
 	if not has_provider_consent(provider_name):
 		return false
 	var pm_node: Node = _get_plugin_manager()
@@ -419,9 +429,12 @@ func _try_tier3_model_embeddings(data: Array, context_graph_artifact_id: String)
 	if not loader or not loader.has_method("supports_embeddings") or not loader.supports_embeddings():
 		return false
 
-	_status("Model themes: requesting embeddings from %s (%s)…" % [current_model, provider_name])
+	_status("Model themes: requesting embeddings from %s (%s)…" % [embedding_model, provider_name])
 
-	var model_id: String = "%s/%s" % [provider_name, current_model]
+	var model_id: String = "%s/%s" % [provider_name, embedding_model]
+	var expected_dim: int = int(
+		EmbeddingModelCatalogScript.expected_dim(embedding_model)
+	)
 	var texts: Array = []
 	for it_any in data:
 		if typeof(it_any) == TYPE_DICTIONARY:
@@ -429,7 +442,23 @@ func _try_tier3_model_embeddings(data: Array, context_graph_artifact_id: String)
 		else:
 			texts.append("")
 
-	var cached: Dictionary = embed_cache.get_cached_batch(texts, model_id, 0)
+	# Lookup with expected dim when known; dim=0 scans any dim for this model_id
+	# but rejects mismatched lengths within the batch (see EmbeddingCache).
+	var cached: Dictionary = embed_cache.get_cached_batch(
+		texts,
+		model_id,
+		expected_dim
+	)
+	# Drop cache hits whose vector dim does not match expected (model switch).
+	if expected_dim > 0:
+		for cache_idx_any: Variant in cached.keys():
+			var cached_vec_any: Variant = cached[cache_idx_any]
+			if typeof(cached_vec_any) != TYPE_ARRAY:
+				cached.erase(cache_idx_any)
+				continue
+			if (cached_vec_any as Array).size() != expected_dim:
+				cached.erase(cache_idx_any)
+
 	var uncached_indices: Array = []
 	var uncached_texts: Array = []
 	for i in range(texts.size()):
@@ -444,6 +473,7 @@ func _try_tier3_model_embeddings(data: Array, context_graph_artifact_id: String)
 			cache_hits, texts.size(), uncached_texts.size(), provider_name])
 
 	var new_vectors: Array = []
+	var response_dim: int = expected_dim
 	if not uncached_texts.is_empty():
 		if host_node == null:
 			return false
@@ -452,7 +482,10 @@ func _try_tier3_model_embeddings(data: Array, context_graph_artifact_id: String)
 		if url.is_empty():
 			return false
 		var req_headers: PackedStringArray = loader.get_embeddings_headers(api_key)
-		var body: Dictionary = loader.prepare_embeddings_request(uncached_texts)
+		var body: Dictionary = loader.prepare_embeddings_request(
+			uncached_texts,
+			embedding_model
+		)
 		var body_json: String = JSON.stringify(body)
 
 		var http_req: HTTPRequest = HTTPRequest.new()
@@ -483,26 +516,53 @@ func _try_tier3_model_embeddings(data: Array, context_graph_artifact_id: String)
 		var dim_size: int = 0
 		if not new_vectors.is_empty():
 			dim_size = int(new_vectors[0].size())
-		embed_cache.put_cached_batch(uncached_texts, new_vectors, model_id, dim_size)
+		# Reject mixed dims within the new batch.
+		for vec_any: Variant in new_vectors:
+			if typeof(vec_any) != TYPE_ARRAY or (vec_any as Array).size() != dim_size:
+				_status("Model themes: embedding dimensions are inconsistent.")
+				return false
+		if expected_dim > 0 and dim_size > 0 and dim_size != expected_dim:
+			# Model returned an unexpected width — invalidate and store under real dim.
+			_status(
+				"Model themes: dim %d differs from expected %d for %s — re-keyed."
+				% [dim_size, expected_dim, embedding_model]
+			)
+		response_dim = dim_size if dim_size > 0 else expected_dim
+		embed_cache.put_cached_batch(
+			uncached_texts,
+			new_vectors,
+			model_id,
+			response_dim
+		)
 		embed_cache.save()
 
 	var new_vec_idx: int = 0
+	var assembled_dim: int = response_dim
 	for i in range(data.size()):
 		if typeof(data[i]) != TYPE_DICTIONARY:
 			continue
 		var it: Dictionary = (data[i] as Dictionary).duplicate()
+		var vector_any: Variant = null
 		if cached.has(i) and cached[i] != null:
-			it["vector"] = cached[i]
+			vector_any = cached[i]
 		elif new_vec_idx < new_vectors.size():
-			it["vector"] = new_vectors[new_vec_idx]
+			vector_any = new_vectors[new_vec_idx]
 			new_vec_idx += 1
+		if typeof(vector_any) == TYPE_ARRAY:
+			if assembled_dim <= 0:
+				assembled_dim = (vector_any as Array).size()
+			elif (vector_any as Array).size() != assembled_dim:
+				# Dim mismatch across models/cache — abort to Tier 2 rather than mix.
+				_status("Model themes: cache dim mismatch — falling back to local themes.")
+				return false
+			it["vector"] = vector_any
 		data[i] = it
 	embedding_tier = "tier3_model"
 	_status("Model themes ready (%s, %d items, %d cached)." % [model_id, data.size(), cache_hits])
 
 	if pipeline:
 		await pipeline.persist_embedding_artifact(
-			data, context_graph_artifact_id, embedding_tier, provider_name, current_model
+			data, context_graph_artifact_id, embedding_tier, provider_name, embedding_model
 		)
 	return true
 
@@ -526,6 +586,12 @@ func _data_has_vectors(data: Array) -> bool:
 		if typeof(vec_any) == TYPE_ARRAY and (vec_any as Array).size() > 0:
 			return true
 	return false
+
+
+func _annotate_provisional_labels(patterns: Array) -> Array:
+	## Machine-propose short theme labels; never auto-commit (human commits in Dream Inbox).
+	var labeler: RefCounted = SynAxesThemeLabelerScript.new()
+	return labeler.annotate_patterns(patterns)
 
 
 func _populate_pattern_viewer(patterns: Array) -> void:

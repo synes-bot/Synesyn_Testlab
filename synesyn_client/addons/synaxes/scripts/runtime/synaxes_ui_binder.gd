@@ -37,6 +37,7 @@ const COMMON_NODE_NAMES: Array[String] = [
 	"UseHubEmbeddings",
 	"EmbeddingTierLabel",
 	"CacheStatsLabel",
+	"ShowDebugOverlay",
 	"BottomTabs",
 	"WorkOnThisButton",
 	# Phase B default-path controls

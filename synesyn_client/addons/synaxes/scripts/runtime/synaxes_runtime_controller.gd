@@ -21,6 +21,9 @@ const ClosureControllerScript = preload("res://addons/synaxes/scripts/runtime/sy
 const ImportControllerScript = preload("res://addons/synaxes/scripts/runtime/synaxes_import_controller.gd")
 const AnalysisControllerScript = preload("res://addons/synaxes/scripts/runtime/synaxes_analysis_controller.gd")
 const UiBinderScript = preload("res://addons/synaxes/scripts/runtime/synaxes_ui_binder.gd")
+const SourceListBuilderScript = preload("res://addons/synaxes/scripts/runtime/synaxes_source_list_builder.gd")
+const PanelLayoutScript = preload("res://addons/synaxes/scripts/runtime/synaxes_panel_layout.gd")
+const DiscoverFocusScript = preload("res://addons/synaxes/scripts/runtime/synaxes_discover_focus.gd")
 
 func _update_synaxes_logo(_mode: String = "") -> void:
 	var is_dark_mode := true
@@ -380,35 +383,13 @@ func _find(node_name: String) -> Node:
 # ── Import ────────────────────────────────────────────────────────────────
 
 func _ensure_hub_source_present() -> void:
-	## Rebuild the source list: real sources on top, separator, then demo sources below.
+	## Rebuild the source list (demos first when Hub has no material).
 	if not source_list:
 		return
-
-	# Collect any existing demo items
-	var demo_labels: Array[String] = []
-	for i in range(source_list.item_count):
-		var lbl := source_list.get_item_text(i)
-		if lbl.begins_with("Demo:"):
-			demo_labels.append(lbl)
-
-	source_list.clear()
-
-	# Real data sources first
-	source_list.add_item(SOURCE_LABEL_HUB_CONTEXT)
-	source_list.add_item(SOURCE_LABEL_HUB_EMBEDDINGS)
-	source_list.add_item(SOURCE_LABEL_SCENSYN_SESSIONS)
-
-	# Visual separator (disabled, non-selectable)
-	var sep_idx := source_list.item_count
-	source_list.add_item("── Demo / sample data ──")
-	source_list.set_item_disabled(sep_idx, true)
-	source_list.set_item_selectable(sep_idx, false)
-
-	# Demo sources
-	if demo_labels.is_empty():
-		demo_labels = ["Demo: Text Samples", "Demo: Semantic Samples", "Demo: Image Samples"]
-	for demo_lbl in demo_labels:
-		source_list.add_item(demo_lbl)
+	var hub_material_count: int = 0
+	if _import_ctrl != null:
+		hub_material_count = int(_import_ctrl.last_context_graph_count)
+	SourceListBuilderScript.rebuild(source_list, hub_material_count)
 
 func _on_refresh_sources_pressed() -> void:
 	_ensure_hub_source_present()
@@ -426,7 +407,9 @@ func _on_import_pressed() -> void:
 	if selected.is_empty():
 		_set_status("Please select a source type first.")
 		return
-	var label := source_list.get_item_text(selected[0])
+	var label: String = SourceListBuilderScript.normalize_import_label(
+		source_list.get_item_text(selected[0])
+	)
 	await _import_ctrl.import_source(label)
 
 
@@ -438,6 +421,8 @@ func _on_import_latest_pressed() -> void:
 func _on_context_graphs_availability(graph_count: int) -> void:
 	if import_latest_button:
 		import_latest_button.visible = graph_count > 0
+	# Reorder demos vs Hub sources once we know whether Hub has material.
+	_ensure_hub_source_present()
 
 
 func _on_import_completed(data: Array) -> void:
@@ -529,14 +514,7 @@ func _refresh_step_spine() -> void:
 			active_idx = 4
 		_:
 			active_idx = 0
-	var parts: Array[String] = []
-	for i in range(_SPINE_STEPS.size()):
-		var step_label: String = _SPINE_STEPS[i]
-		if i == active_idx:
-			parts.append("[%s]" % step_label)
-		else:
-			parts.append(step_label)
-	step_spine_label.text = " → ".join(parts)
+	step_spine_label.text = DiscoverFocusScript.spine_text(_SPINE_STEPS, active_idx)
 
 
 func _on_candidate_editing(_idx: int) -> void:
@@ -679,14 +657,13 @@ func _on_discovery_completed(result: Dictionary) -> void:
 		_populate_imported_data_preview()
 	_update_provenance_display()
 	_populate_pattern_overview()
-	if _focus_closures_after_discover:
+	if bottom_tabs:
+		var tab_count: int = bottom_tabs.get_tab_count()
+		var want_closures: bool = _focus_closures_after_discover
 		_focus_closures_after_discover = false
-		# Propose-themes path (REQ-NDP-016): Dream Inbox / Closure Editor.
-		if bottom_tabs and bottom_tabs.get_tab_count() > 2:
-			bottom_tabs.current_tab = 2
-	elif bottom_tabs and bottom_tabs.get_tab_count() > 0:
-		# Overview-first (REQ-NDP-004): analysis_controller already sets tab 0; reinforce here.
-		bottom_tabs.current_tab = 0
+		var next_tab: int = DiscoverFocusScript.bottom_tab_after_discover(want_closures, tab_count)
+		if next_tab >= 0:
+			bottom_tabs.current_tab = next_tab
 	_set_spine_state("discovered")
 
 
@@ -1057,14 +1034,18 @@ func _populate_pattern_overview() -> void:
 			"cluster": cluster_count += 1
 			"bridge": bridge_count += 1
 			"hub": hub_count += 1
+		var provisional: String = str(p.get("provisional_label", "")).strip_edges()
+		var is_provisional: bool = bool(p.get("label_is_provisional", not provisional.is_empty()))
+		var title: String = provisional if not provisional.is_empty() else ("%s #%d" % [p_type.capitalize(), p_id])
+		if is_provisional and not provisional.is_empty():
+			title = "~ %s" % provisional
 		# Content preview from first item
 		var preview := ""
 		if p_items.size() > 0 and typeof(p_items[0]) == TYPE_DICTIONARY:
 			preview = str((p_items[0] as Dictionary).get("content", ""))
 			if preview.length() > 40:
 				preview = preview.left(37) + "..."
-		# Clearer labels than cryptic single-line rows: include type + id + counts + confidence.
-		var row_text := "%s #%d  •  %d items  •  %s" % [p_type.capitalize(), p_id, p_items.size(), conf_str]
+		var row_text := "%s  •  %d items  •  %s" % [title, p_items.size(), conf_str]
 		if not preview.is_empty():
 			row_text += "  •  %s" % preview
 		pattern_overview_list.add_item(row_text)
@@ -1073,6 +1054,10 @@ func _populate_pattern_overview() -> void:
 		# Tooltip shows a slightly richer sample (first 3 items).
 		var tip_parts: Array[String] = []
 		tip_parts.append("%s #%d" % [p_type.capitalize(), p_id])
+		if not provisional.is_empty():
+			tip_parts.append("Provisional label: %s (%s)" % [
+				provisional, str(p.get("label_source", "machine_proposed")),
+			])
 		tip_parts.append("%d items • %s confidence" % [p_items.size(), conf_str])
 		var sample_parts: Array[String] = []
 		for it_any in p_items:
@@ -1162,14 +1147,21 @@ func _apply_initial_panel_layout() -> void:
 	if _toggle_bottom_btn:
 		_on_toggle_bottom_panel(_toggle_bottom_btn.button_pressed)
 
-	# Set the vertical split proportionally so the Pattern Viewer always gets
-	# a reasonable share of the available height regardless of window/dock size.
 	var vsplit: SplitContainer = _find("VSplitContainer") as SplitContainer
-	if vsplit and vsplit.size.y > 0:
-		# 58% for the viewer area, 42% for the bottom tabs — clamp so neither
-		# panel goes below its minimum usable height.
-		var desired: int = int(vsplit.size.y * 0.58)
-		desired = clampi(desired, 240, 600)
-		vsplit.split_offset = desired
-
+	PanelLayoutScript.apply_vsplit_default(vsplit)
+	_wire_debug_overlay_toggle()
 	_refresh_split_layout()
+
+
+func _wire_debug_overlay_toggle() -> void:
+	var dbg_toggle: CheckBox = _find("ShowDebugOverlay") as CheckBox
+	if dbg_toggle == null:
+		PanelLayoutScript.set_debug_overlay(pattern_viewer, debug_info, false)
+		return
+	if not dbg_toggle.toggled.is_connected(_on_show_debug_overlay_toggled):
+		dbg_toggle.toggled.connect(_on_show_debug_overlay_toggled)
+	PanelLayoutScript.set_debug_overlay(pattern_viewer, debug_info, dbg_toggle.button_pressed)
+
+
+func _on_show_debug_overlay_toggled(is_on: bool) -> void:
+	PanelLayoutScript.set_debug_overlay(pattern_viewer, debug_info, is_on)
