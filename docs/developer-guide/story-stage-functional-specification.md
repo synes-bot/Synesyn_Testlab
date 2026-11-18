@@ -462,15 +462,36 @@ scenario_section_enabled(key, default_enabled=true):
 | `[VIS_STORY]` | off unless `enabled: true` | Slideshow of host-supplied images. The backdrop stands when off. |
 | `[AMBIENT_SOUND]` | off unless `enabled: true` | OSC to SuperCollider. Keys: `host` (default `127.0.0.1`), `port` (57120), `base_intensity`, `mood_<phase>` for each phase. |
 | `[PLAYER_AUTO_INPUT]` | off | Host may expose auto-input. The stage only reads `get_player_auto_input()`. |
-| `[LUMUR_AUDIENCE]` | off | Opt-in audience steering for an external client (e.g. Lumur). Parsed to `scenario["lumur_audience"]` as key:value pairs (`enabled`, `min_dwell_s`, `debounce_s`, optional `zone_<id>` rects, …). Synesyn / Story Stage do not act on it; the external bridge maps presence / zone / gathering events to stage choices. |
+| `[LUMUR_AUDIENCE]` | off | Opt-in audience steering for an external client (e.g. Lumur). Body may be a **JSON object** (nested `zones` / `zone_actions`, same precedent as `[WORKSHOP_AGENDA]`) or flat `key: value` lines (optional `zone_<id>` rect shorthand). Result is `scenario["lumur_audience"]`. Synesyn / Story Stage do not act on it; the external bridge maps presence / zone / gathering events to stage choices. Invalid JSON that starts with `{` warns and falls back to flat parse. |
 
-Example (external client; Lumur format):
+Flat form:
 
 ```text
 [LUMUR_AUDIENCE]
 enabled: true
 min_dwell_s: 1.5
 debounce_s: 0.8
+zone_left: -1.0,-0.2,0.2,0.9
+```
+
+JSON object form (nested zones / actions; Lumur docs):
+
+```text
+[LUMUR_AUDIENCE]
+{
+  "enabled": true,
+  "min_dwell_s": 1.5,
+  "debounce_s": 0.8,
+  "zones": [
+    {"zone_id": "left", "kind": "rect", "u_min": -1.0, "u_max": -0.2, "v_min": 0.2, "v_max": 0.9}
+  ],
+  "zone_actions": {
+    "left": {"action": "choose_option", "option_index": 0},
+    "right": {"action": "choose_option", "option_index": 1}
+  },
+  "gathering_action": "advance_beat",
+  "intensity_parameter": "intensity"
+}
 ```
 
 Addresses the ambient bridge sends, fire-and-forget:

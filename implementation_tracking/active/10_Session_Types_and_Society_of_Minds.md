@@ -158,6 +158,7 @@ The original draft of section D assumed a Kernel-style parallel-agents architect
 - [ ] Do specialists "vote" at all under Society of Minds, or does `/vote` (facilitator-only) become the sole vote path (E.4)?
 - [ ] Should Synthesizer output route through `WorkshopCatalystSessionRecord.post()` verbatim, or does Session Record become a thin wrapper specifically around Synthesizer output?
 - [ ] Timing of the hamburger-panel `.tscn` migration (G) relative to adding the "Show reasoning" drill-down.
+- [ ] **OPEN DECISION (status: open, not decided; revisit later) — Which file format should ScenSyn scenarios use?** Today: plain `.txt` with bracketed sections; config sections are flat `key: value` lines split at the first colon, keys lowercased, values all strings (no nesting/typing); prose sections are raw text; `[WORKSHOP_AGENDA]` already embeds a JSON array parsed downstream, and `[LUMUR_AUDIENCE]` now also accepts a JSON object body (with flat key:value fallback). Options: **(a)** keep `.txt` and allow JSON blocks inside config-heavy sections (WORKSHOP_AGENDA / LUMUR_AUDIENCE pattern); **(b)** move to `scenario.json` — typed/nested config and schema validation, but painful for long prose/metaprompts (escaping, no comments); **(c)** YAML or TOML — handle prose and structure, but require a migration. Current leaning: **(a) for now**; any full format change is a separate Synesyn decision, not something to decide in the Lumur bridge workstream.
 
 ---
 

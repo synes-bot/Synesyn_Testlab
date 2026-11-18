@@ -1,6 +1,7 @@
 extends SceneTree
 
 ## ScenarioLoader: [LUMUR_AUDIENCE] whitelist / pass-through (Lumur bridge opt-in).
+## Covers JSON object body, flat key:value, absent section, and invalid JSON fallback.
 
 const ScenarioLoaderScript = preload("res://ScenSyn/scripts/core/scenario_loader.gd")
 
@@ -12,8 +13,10 @@ func _init() -> void:
 
 
 func _run() -> void:
-	_test_with_lumur_audience_section()
+	_test_flat_key_value_form()
+	_test_json_object_form()
 	_test_without_lumur_audience_unchanged()
+	_test_invalid_json_falls_back_without_crash()
 	_finish()
 
 
@@ -32,7 +35,7 @@ func _minimal_scenario_body() -> String:
 	)
 
 
-func _test_with_lumur_audience_section() -> void:
+func _test_flat_key_value_form() -> void:
 	var content: String = (
 		_minimal_scenario_body()
 		+ "\n"
@@ -47,14 +50,56 @@ func _test_with_lumur_audience_section() -> void:
 	var loader: RefCounted = ScenarioLoaderScript.new()
 	var parsed: Dictionary = loader.parse_scenario_file(content)
 	var scenario: Dictionary = parsed.get("scenario", {}) as Dictionary
-	_expect(scenario.has("lumur_audience"), "Expected scenario.lumur_audience dict")
-	_expect(not scenario.has("lumur_audience_text"), "Must not fall back to lumur_audience_text when whitelisted")
+	_expect(scenario.has("lumur_audience"), "Flat form: expected scenario.lumur_audience dict")
+	_expect(not scenario.has("lumur_audience_text"), "Flat form: must not invent lumur_audience_text")
 	var audience: Dictionary = scenario.get("lumur_audience", {}) as Dictionary
-	_expect(str(audience.get("enabled", "")) == "true", "enabled should parse as string true")
-	_expect(str(audience.get("min_dwell_s", "")) == "1.5", "min_dwell_s mismatch")
-	_expect(str(audience.get("debounce_s", "")) == "0.8", "debounce_s mismatch")
-	_expect(str(audience.get("gathering_action", "")) == "advance_beat", "gathering_action mismatch")
-	_expect(str(audience.get("zone_left", "")).find("-1.0") >= 0, "zone_left shorthand should pass through")
+	_expect(str(audience.get("enabled", "")) == "true", "Flat form: enabled mismatch")
+	_expect(str(audience.get("min_dwell_s", "")) == "1.5", "Flat form: min_dwell_s mismatch")
+	_expect(str(audience.get("debounce_s", "")) == "0.8", "Flat form: debounce_s mismatch")
+	_expect(str(audience.get("gathering_action", "")) == "advance_beat", "Flat form: gathering_action mismatch")
+	_expect(str(audience.get("zone_left", "")).find("-1.0") >= 0, "Flat form: zone_left shorthand")
+
+
+func _test_json_object_form() -> void:
+	var content: String = (
+		_minimal_scenario_body()
+		+ "\n"
+		+ "[LUMUR_AUDIENCE]\n"
+		+ "{\n"
+		+ "  \"enabled\": true,\n"
+		+ "  \"min_dwell_s\": 1.5,\n"
+		+ "  \"debounce_s\": 0.8,\n"
+		+ "  \"zones\": [\n"
+		+ "    {\"zone_id\": \"left\", \"kind\": \"rect\", \"u_min\": -1.0, \"u_max\": -0.2, \"v_min\": 0.2, \"v_max\": 0.9}\n"
+		+ "  ],\n"
+		+ "  \"zone_actions\": {\n"
+		+ "    \"left\": {\"action\": \"choose_option\", \"option_index\": 0},\n"
+		+ "    \"right\": {\"action\": \"choose_option\", \"option_index\": 1}\n"
+		+ "  },\n"
+		+ "  \"gathering_action\": \"advance_beat\",\n"
+		+ "  \"intensity_parameter\": \"intensity\"\n"
+		+ "}\n"
+	)
+	var loader: RefCounted = ScenarioLoaderScript.new()
+	var parsed: Dictionary = loader.parse_scenario_file(content)
+	var scenario: Dictionary = parsed.get("scenario", {}) as Dictionary
+	_expect(scenario.has("lumur_audience"), "JSON form: expected scenario.lumur_audience dict")
+	_expect(not scenario.has("lumur_audience_text"), "JSON form: must not invent lumur_audience_text")
+	var audience: Dictionary = scenario.get("lumur_audience", {}) as Dictionary
+	_expect(bool(audience.get("enabled", false)) == true, "JSON form: enabled should be bool true")
+	_expect(float(audience.get("min_dwell_s", 0.0)) == 1.5, "JSON form: min_dwell_s typed float")
+	var zones_any: Variant = audience.get("zones", [])
+	_expect(typeof(zones_any) == TYPE_ARRAY, "JSON form: zones should be Array")
+	var zones: Array = zones_any as Array
+	_expect(zones.size() == 1, "JSON form: expected one zone")
+	if zones.size() >= 1 and typeof(zones[0]) == TYPE_DICTIONARY:
+		_expect(str((zones[0] as Dictionary).get("zone_id", "")) == "left", "JSON form: zone_id left")
+	var actions_any: Variant = audience.get("zone_actions", {})
+	_expect(typeof(actions_any) == TYPE_DICTIONARY, "JSON form: zone_actions should be Dictionary")
+	var actions: Dictionary = actions_any as Dictionary
+	_expect(actions.has("left") and actions.has("right"), "JSON form: zone_actions keys")
+	if typeof(actions.get("left", null)) == TYPE_DICTIONARY:
+		_expect(int((actions["left"] as Dictionary).get("option_index", -1)) == 0, "JSON form: left option_index")
 
 
 func _test_without_lumur_audience_unchanged() -> void:
@@ -68,12 +113,31 @@ func _test_without_lumur_audience_unchanged() -> void:
 	var loader: RefCounted = ScenarioLoaderScript.new()
 	var parsed: Dictionary = loader.parse_scenario_file(content)
 	var scenario: Dictionary = parsed.get("scenario", {}) as Dictionary
-	_expect(not scenario.has("lumur_audience"), "Absent [LUMUR_AUDIENCE] must not invent lumur_audience")
-	_expect(not scenario.has("lumur_audience_text"), "Absent section must not invent lumur_audience_text")
-	_expect(scenario.has("player_auto_input"), "Existing PLAYER_AUTO_INPUT parse must still work")
+	_expect(not scenario.has("lumur_audience"), "Absent: must not invent lumur_audience")
+	_expect(not scenario.has("lumur_audience_text"), "Absent: must not invent lumur_audience_text")
+	_expect(scenario.has("player_auto_input"), "Absent: PLAYER_AUTO_INPUT still parses")
 	var auto_input: Dictionary = scenario.get("player_auto_input", {}) as Dictionary
-	_expect(str(auto_input.get("enabled", "")) == "true", "player_auto_input.enabled mismatch")
-	_expect(str(scenario.get("name", "")) == "Lumur Audience Fixture", "Scenario name should still parse")
+	_expect(str(auto_input.get("enabled", "")) == "true", "Absent: player_auto_input.enabled")
+	_expect(str(scenario.get("name", "")) == "Lumur Audience Fixture", "Absent: scenario name")
+
+
+func _test_invalid_json_falls_back_without_crash() -> void:
+	# Looks like JSON (starts with '{') but is truncated — must not crash.
+	var content: String = (
+		_minimal_scenario_body()
+		+ "\n"
+		+ "[LUMUR_AUDIENCE]\n"
+		+ "{\n"
+		+ "  \"enabled\": true,\n"
+		+ "  \"zones\": [\n"
+	)
+	var loader: RefCounted = ScenarioLoaderScript.new()
+	var parsed: Dictionary = loader.parse_scenario_file(content)
+	var scenario: Dictionary = parsed.get("scenario", {}) as Dictionary
+	# Fallback flat parse may yield a partial/empty dict; either is fine so long as we continue.
+	_expect(typeof(scenario) == TYPE_DICTIONARY, "Invalid JSON: scenario still a Dictionary")
+	_expect(str(scenario.get("name", "")) == "Lumur Audience Fixture", "Invalid JSON: rest of scenario intact")
+	_expect(not scenario.has("lumur_audience_text"), "Invalid JSON: no free-text fallback key")
 
 
 func _expect(condition: bool, failure_message: String) -> void:
