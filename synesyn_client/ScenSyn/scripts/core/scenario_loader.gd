@@ -53,6 +53,10 @@ const StoryScenarioContractScript = preload(
 ##   [VIS_STORY]         — Visual story export config.
 ##   [RELATIONAL_MATRIX] — Relational matrix schema.
 ##   [PLAYER_AUTO_INPUT] — Auto-input / simulation config.
+##   [LUMUR_AUDIENCE]    — Opt-in audience-steering config for an external client
+##                         (e.g. Lumur). Parsed to scenario["lumur_audience"] as
+##                         key:value pairs; Synesyn does not act on it beyond
+##                         pass-through. Absent → behaviour unchanged (ADR 0027).
 ##
 ## All unknown sections are collected into section_texts and are available to
 ## themes via scenario["section_texts"][section_name].
@@ -184,6 +188,8 @@ func parse_scenario_file(scenario_content: String) -> Dictionary:
 	var system_config: Dictionary = {}
 	# NEW: Player auto-input configuration
 	var player_auto_input_config: Dictionary = {}
+	# Opt-in audience steering for external clients (e.g. Lumur); pass-through only.
+	var lumur_audience_config: Dictionary = {}
 	# NEW: Scenario-scoped symbolic memory continuity configuration
 	var memory_continuity: Dictionary = {}
 	# NEW: Optional vis_story export configuration
@@ -262,6 +268,15 @@ func parse_scenario_file(scenario_content: String) -> Dictionary:
 				var key = parts[0].strip_edges().to_lower()
 				var value = parts[1].strip_edges()
 				player_auto_input_config[key] = value
+		elif current_section == "LUMUR_AUDIENCE" and line != "":
+			if line.begins_with("#"):
+				pass
+			else:
+				var parts = line.split(":", true, 1)
+				if parts.size() == 2:
+					var key = parts[0].strip_edges().to_lower()
+					var value = parts[1].strip_edges()
+					lumur_audience_config[key] = value
 		elif current_section == "MEMORY_CONTINUITY" and line != "":
 			var parts = line.split(":", true, 1)
 			if parts.size() == 2:
@@ -363,7 +378,7 @@ func parse_scenario_file(scenario_content: String) -> Dictionary:
 				var key = parts[0].strip_edges().to_lower()
 				var value = parts[1].strip_edges()
 				ambient_sound_config[key] = value
-		elif current_section != "" and current_section not in ["SCENARIO", "VOICES", "CHARACTERS", "PHASE_GUIDANCE", "STAGE_GUIDANCE", "DIRECTOR_ARCHETYPES", "TURN_OBLIGATIONS", "SYSTEM_CONFIG", "TIME_MODEL", "PLAYER_AUTO_INPUT", "MEMORY_CONTINUITY", "VIS_STORY", "VERSE_SYSTEM", "RELATIONAL_MATRIX", "VOICE_OVERRIDES", "DRAMATURGY_MATRIX", "LULL_PROTOCOL", "LULL_MURMURS", "AMBIENT_SOUND"]:
+		elif current_section != "" and current_section not in ["SCENARIO", "VOICES", "CHARACTERS", "PHASE_GUIDANCE", "STAGE_GUIDANCE", "DIRECTOR_ARCHETYPES", "TURN_OBLIGATIONS", "SYSTEM_CONFIG", "TIME_MODEL", "PLAYER_AUTO_INPUT", "LUMUR_AUDIENCE", "MEMORY_CONTINUITY", "VIS_STORY", "VERSE_SYSTEM", "RELATIONAL_MATRIX", "VOICE_OVERRIDES", "DRAMATURGY_MATRIX", "LULL_PROTOCOL", "LULL_MURMURS", "AMBIENT_SOUND"]:
 			# Generic text section (INSTRUCTIONS, CONTEXT, WORKSHOP_PACKET, WORKSHOP_AGENDA, WORLDBUILDING_CONTEXT, DESIGN_PROVOCATIONS, PROPOSAL_OUTPUT_TEMPLATE, ABOUT, HOW_TO, etc.)
 			# Section name like "HOW_TO" or "HOW TO" both become key "how_to_text"
 			var key = current_section.to_lower().replace(" ", "_") + "_text"
@@ -413,6 +428,9 @@ func parse_scenario_file(scenario_content: String) -> Dictionary:
 
 	if not player_auto_input_config.is_empty():
 		scenario["player_auto_input"] = player_auto_input_config
+
+	if not lumur_audience_config.is_empty():
+		scenario["lumur_audience"] = lumur_audience_config
 
 	if not memory_continuity.is_empty():
 		scenario["memory_continuity"] = memory_continuity

@@ -41,6 +41,7 @@ Related artifact types:
 - `json.render_request`
 - `json.render_recipe`
 - `json.lumur_room` (external client room package for provenance; e.g. Lumur)
+- `json.lumur_session` (external client recorded session for provenance / replay; e.g. Lumur)
 - `image.generated`
 
 ## Cross-application render entrypoint

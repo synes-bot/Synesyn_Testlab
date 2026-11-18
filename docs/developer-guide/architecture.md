@@ -34,6 +34,8 @@ Key artifact types:
   workflows and request records
 - `json.lumur_room` — room package registered by an external client (e.g. Lumur)
   for provenance
+- `json.lumur_session` — recorded room session from an external client (e.g. Lumur)
+  for provenance / replay
 - `image.generated` — generated images with provenance
 
 ## Group sessions (Hub-first)

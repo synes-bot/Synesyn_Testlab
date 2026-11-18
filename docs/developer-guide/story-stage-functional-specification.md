@@ -462,6 +462,16 @@ scenario_section_enabled(key, default_enabled=true):
 | `[VIS_STORY]` | off unless `enabled: true` | Slideshow of host-supplied images. The backdrop stands when off. |
 | `[AMBIENT_SOUND]` | off unless `enabled: true` | OSC to SuperCollider. Keys: `host` (default `127.0.0.1`), `port` (57120), `base_intensity`, `mood_<phase>` for each phase. |
 | `[PLAYER_AUTO_INPUT]` | off | Host may expose auto-input. The stage only reads `get_player_auto_input()`. |
+| `[LUMUR_AUDIENCE]` | off | Opt-in audience steering for an external client (e.g. Lumur). Parsed to `scenario["lumur_audience"]` as key:value pairs (`enabled`, `min_dwell_s`, `debounce_s`, optional `zone_<id>` rects, …). Synesyn / Story Stage do not act on it; the external bridge maps presence / zone / gathering events to stage choices. |
+
+Example (external client; Lumur format):
+
+```text
+[LUMUR_AUDIENCE]
+enabled: true
+min_dwell_s: 1.5
+debounce_s: 0.8
+```
 
 Addresses the ambient bridge sends, fire-and-forget:
 

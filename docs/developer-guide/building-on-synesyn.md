@@ -97,6 +97,7 @@ nothing leaves it off. A declared section can still be switched off with `enable
 | `[VIS_STORY] enabled: true` | Per-turn image rendering, and the background slideshow those images feed |
 | `[AMBIENT_SOUND] enabled: true` | Ambient audio over OSC, following the narrative phase |
 | `[PLAYER_AUTO_INPUT]` | Turns driven by external input rather than a person, which also skips character selection |
+| `[LUMUR_AUDIENCE]` | Opt-in audience steering for an external client such as Lumur (room presence / zone / gathering → Story Stage). Synesyn parses it to `scenario["lumur_audience"]` and does not act on it; the external bridge consumes it. Absent → unchanged |
 | `[STAGING]` | Stagecraft cues (`stage_cues` on log entries): named marks, gaze, expressions, gestures, cue light, and `talking_big` at high intensity |
 | `[CHARACTER_MOTION]` | Highest motion rung requested (rung 1 audio-bus response is the default; rung 3 adds `Skeleton2D` head tilt and shader blink/breath) |
 | `[VIS_PORTRAIT]` | Generated portrait frame sets or per-line clips via the `StoryStageImagery` port |
