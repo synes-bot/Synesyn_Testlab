@@ -33,6 +33,9 @@ jobs:
       - name: Documented paths still exist
         run: python utilities/checks/check_doc_paths.py
 
+      - name: First-party versions agree
+        run: python utilities/checks/check_version_consistency.py
+
       - name: Addons do not reach into application autoloads
         run: python utilities/checks/check_addon_autoloads.py
 

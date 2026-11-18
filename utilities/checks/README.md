@@ -7,10 +7,11 @@ Policy checks. Each exits non-zero on failure, so all are usable in CI.
 | `check_line_limits.py` | source files growing past the maintainability thresholds |
 | `check_addon_autoloads.py` | addons reaching into application autoloads (ADR 0017) |
 | `check_doc_paths.py` | documentation naming repository paths that no longer exist |
+| `check_version_consistency.py` | first-party version declarations drifting from root `VERSION` |
 | `check_story_stage_boundary.py` | Story Stage reaching past its host into an application (ADR 0029) |
 | `story_stage_dropin_test.py` | Story Stage failing to run in a project that has nothing but it and `synesyn_core` |
 
-CI runs the first three. The Story Stage pair are run by hand after changing
+CI runs the first four. The Story Stage pair are run by hand after changing
 `synesyn_client/addons/story_stage/`; the drop-in test needs a Godot binary.
 
 ## Story Stage boundary
@@ -27,6 +28,16 @@ CI runs the first three. The Story Stage pair are run by hand after changing
   for inspection.
 - Run: `python utilities/checks/check_story_stage_boundary.py`, then
   `python utilities/checks/story_stage_dropin_test.py`
+
+## Version consistency check
+
+- Script: `check_version_consistency.py`
+- Purpose: keep every first-party project/component version aligned with the
+  root `VERSION` file (`CITATION.cff`, `project.godot`, first-party
+  `plugin.cfg` files, hub default, `METAPUNKT_VERSION`, and the matching
+  `CHANGELOG.md` release heading). Vendored third-party addons such as
+  `limboai` are excluded.
+- Run: `python utilities/checks/check_version_consistency.py`
 
 ## Documented path check
 
