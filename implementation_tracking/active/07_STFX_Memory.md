@@ -1,7 +1,7 @@
-# To‑Do — Artrhythmetic Memory (symbolic deterministic memory capability)
+# To‑Do — STFX Memory (symbolic deterministic memory capability)
 
 **Primary spec references**
-- `../Artrhythmetic_Memory_Capability_Spec.md`
+- `../../docs/implementation_docs/STFX_Memory_Capability_Spec.md`
 - `../Synesyn_Platform_Technical_Architecture.md`
 - `../Synesyn_Hub_API_Spec.md`
 - `../LatentSubstrate_Data_Model.md`
@@ -11,7 +11,7 @@
 - `stochasticdreams_visualsystem/Artrhythmetic/artrhythmetic-database_system/artrhythmetric_memory.py`
 
 **What’s already covered**
-- The philosophy, boundaries, and canonical home are defined in `../Artrhythmetic_Memory_Capability_Spec.md`.
+- The philosophy, boundaries, and canonical home are defined in `../../docs/implementation_docs/STFX_Memory_Capability_Spec.md`.
 - This checklist focuses on implementation order, scaffold shape, and concrete tasks.
 
 ---
@@ -24,7 +24,7 @@
 ---
 
 ## A) Canonical scaffold and ownership
-- [x] (v0) Create canonical module home at `synesyn/services/synesyn_hub/app/artrhythmetic_memory/`.
+- [x] (v0) Create canonical module home at `synesyn/services/synesyn_hub/app/stfx_memory/`.
 - [x] (v0) Add initial module files:
   - [x] `__init__.py`
   - [x] `engine.py`
@@ -57,7 +57,7 @@
 - [ ] (v1) Add optional custom seed-family loading from workspace-local config.
 
 ## C) Canonical file-backed storage
-- [x] (v0) Implement canonical workspace layout under `<workspace>/artrhythmetic_memory/`:
+- [x] (v0) Implement canonical workspace layout under `<workspace>/stfx_memory/`:
   - [x] `memory_config.json`
   - [x] `memory_index.json`
   - [x] `seeds/seed_registry.json`
@@ -109,24 +109,24 @@
 - [ ] (v1) Add immutable snapshot expansion export.
 
 ## G) Hub API surface
-- [x] (v0) Register dedicated routes under `/artrhythmetic-memory`.
+- [x] (v0) Register dedicated routes under `/stfx-memory`.
 - [x] (v0) Implement:
-  - [x] `POST /artrhythmetic-memory/documents/ingest`
-  - [x] `GET /artrhythmetic-memory/documents`
-  - [x] `GET /artrhythmetic-memory/documents/{document_id}`
-  - [x] `POST /artrhythmetic-memory/expand`
-  - [x] `POST /artrhythmetic-memory/retrieve`
+  - [x] `POST /stfx-memory/documents/ingest`
+  - [x] `GET /stfx-memory/documents`
+  - [x] `GET /stfx-memory/documents/{document_id}`
+  - [x] `POST /stfx-memory/expand`
+  - [x] `POST /stfx-memory/retrieve`
 - [ ] (v0) Ensure routes remain app-agnostic and do not mention Stochastic Dreams or ScenSyn concepts.
 - [x] (v1) Implement:
-  - [x] `POST /artrhythmetic-memory/snapshots/create`
-  - [x] `POST /artrhythmetic-memory/export/substrate-artifact`
+  - [x] `POST /stfx-memory/snapshots/create`
+  - [x] `POST /stfx-memory/export/substrate-artifact`
 
 ## H) Optional substrate export (secondary, not canonical)
 - [x] (v1) Define substrate artifact types:
-  - [x] `json.artrhythmetic_memory_snapshot`
-  - [x] `json.artrhythmetic_memory_ingest_report`
-  - [x] `json.artrhythmetic_expansion`
-  - [x] `json.artrhythmetic_seed_registry_export`
+  - [x] `json.stfx_memory_snapshot`
+  - [x] `json.stfx_memory_ingest_report`
+  - [x] `json.stfx_expansion`
+  - [x] `json.stfx_seed_registry_export`
 - [x] (v1) Implement export helpers from canonical file-backed state into substrate artifacts.
 - [ ] (v1) Preserve provenance links between:
   - [ ] source refs
@@ -162,7 +162,7 @@
 - [ ] (v1) Add integration tests for hub routes.
 
 ## K) Minimal scaffold plan (implementation sequence)
-- [x] Step 1: create module directory + empty files in `app/artrhythmetic_memory/`.
+- [x] Step 1: create module directory + empty files in `app/stfx_memory/`.
 - [x] Step 2: port prototype engine + seed registry into `engine.py` / `seed_registry.py`.
 - [x] Step 3: implement file-backed `index_store.py` + schemas.
 - [x] Step 4: implement deterministic fallback ingest.
