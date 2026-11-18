@@ -43,7 +43,12 @@ func get_embeddings_url(_api_key_to_use: String = "") -> String:
 	return ""
 
 ## Builds the JSON request body for embedding a batch of texts.
-func prepare_embeddings_request(_texts: Array) -> Dictionary:
+## `embedding_model` (optional): when non-empty, use this id instead of the
+## loader's chat `model_name`. Empty keeps legacy loader-default behaviour.
+func prepare_embeddings_request(
+	_texts: Array,
+	_embedding_model: String = ""
+) -> Dictionary:
 	return {}
 
 ## Returns HTTP headers needed for the embeddings request.

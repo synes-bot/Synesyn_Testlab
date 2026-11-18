@@ -61,14 +61,46 @@ func put_vector(cache_key: String, vector: Array) -> void:
 	_cache[cache_key] = {"vector": vector, "ts": int(Time.get_unix_time_from_system())}
 
 ## Batch lookup: returns {index -> vector} for items that are cached.
+## When `dim` > 0, looks up the exact key. When `dim` == 0, scans for any
+## stored dim under the same content+model_id and returns the first match.
+## Callers must reject mismatched dims across a batch (do not mix models).
 func get_cached_batch(texts: Array, model_id: String, dim: int) -> Dictionary:
 	_ensure_loaded()
 	var result: Dictionary = {}
 	for i in range(texts.size()):
-		var cache_key := make_key(str(texts[i]), model_id, dim)
-		if _cache.has(cache_key):
-			result[i] = (_cache[cache_key] as Dictionary).get("vector", null)
+		var content_text: String = str(texts[i])
+		if dim > 0:
+			var cache_key: String = make_key(content_text, model_id, dim)
+			if _cache.has(cache_key):
+				result[i] = (_cache[cache_key] as Dictionary).get("vector", null)
+			continue
+		# dim == 0: find any entry for this content+model (prefix before final _dim).
+		var content_hash: int = content_text.hash()
+		var prefix: String = "%d_%s_" % [content_hash, model_id]
+		for stored_key_any: Variant in _cache.keys():
+			var stored_key: String = String(stored_key_any)
+			if not stored_key.begins_with(prefix):
+				continue
+			result[i] = (_cache[stored_key] as Dictionary).get("vector", null)
+			break
 	return result
+
+
+## Remove all entries for a model_id (any dim). Used when switching embedding
+## models would otherwise mix incompatible vector widths.
+func invalidate_model(model_id: String) -> int:
+	_ensure_loaded()
+	var removed: int = 0
+	var keys_to_erase: Array[String] = []
+	for stored_key_any: Variant in _cache.keys():
+		var stored_key: String = String(stored_key_any)
+		# Keys are "{hash}_{model_id}_{dim}". model_id may contain underscores.
+		if stored_key.find("_%s_" % model_id) >= 0:
+			keys_to_erase.append(stored_key)
+	for erase_key: String in keys_to_erase:
+		_cache.erase(erase_key)
+		removed += 1
+	return removed
 
 ## Batch store: caches vectors for all items.
 func put_cached_batch(texts: Array, vectors: Array, model_id: String, dim: int) -> void:

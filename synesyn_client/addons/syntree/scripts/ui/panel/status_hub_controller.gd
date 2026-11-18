@@ -84,46 +84,125 @@ func _update_status_async() -> void:
 		hub_text = "Hub: up" if bool(res.get("ok", false)) else "Hub: down"
 		voice_text = _format_voice_status_from_health(res)
 
-	var model := ""
-	var provider := ""
-	if is_instance_valid(_ai_model_manager) and _ai_model_manager.has_method("get_current_model"):
-		model = str(_ai_model_manager.get_current_model())
-		if _ai_model_manager.has_method("get_provider_for_model"):
-			provider = str(_ai_model_manager.get_provider_for_model(model))
+	var resolved: Dictionary = resolve_active_provider_model(
+		_ai_model_manager,
+		_ai_model_selector,
+		_api_provider_selector
+	)
+	var provider: String = String(resolved.get("provider", "?"))
+	var model: String = String(resolved.get("model", "?"))
+	var embed_text: String = format_embedding_status_suffix(
+		_ai_model_manager
+	)
 
-	if provider.is_empty() and is_instance_valid(_api_provider_selector):
-		var meta := _api_provider_selector.get_item_metadata(_api_provider_selector.selected)
-		provider = str(meta) if meta != null else ""
-
-	# Fallback: the model selector UI is often initialized before the model manager is fully synced.
-	if model.is_empty() and is_instance_valid(_ai_model_selector):
-		var idx := int(_ai_model_selector.selected)
-		if idx >= 0 and idx < _ai_model_selector.item_count:
-			var txt := String(_ai_model_selector.get_item_text(idx)).strip_edges()
-			if not txt.is_empty():
-				model = txt
-
-	if provider.is_empty():
-		provider = "?"
-	if model.is_empty():
-		model = "?"
-
-	# Check embedding capability for the active model's provider
-	var embed_text := ""
-	if is_instance_valid(_ai_model_manager) and _ai_model_manager.has_method("get_provider_loader"):
-		var loader: Variant = _ai_model_manager.get_provider_loader(provider)
-		if loader and loader.has_method("supports_embeddings") and loader.supports_embeddings():
-			embed_text = " | Embeddings: yes"
-		else:
-			embed_text = " | Embeddings: no"
-
-	var status_text := "%s | %s | Provider: %s | Model: %s%s" % [hub_text, voice_text, provider, model, embed_text]
+	var status_text := "%s | %s | Provider: %s | Model: %s%s" % [
+		hub_text,
+		voice_text,
+		provider,
+		model,
+		embed_text,
+	]
 	if is_instance_valid(_status_strip_label):
 		_status_strip_label.text = status_text
 	if is_instance_valid(_system_info_label):
 		_system_info_label.text = status_text
 
 	_inflight = false
+
+
+## Resolve chat provider/model for the status strip.
+## Prefers AIModelManager; falls back to OptionButton *metadata* (not badge text).
+## Pre-existing bug: when the manager was empty, provider fell through to the
+## API-provider dropdown default (often OpenAI) while the model stayed "?".
+static func resolve_active_provider_model(
+	ai_model_manager: Object,
+	ai_model_selector: OptionButton,
+	api_provider_selector: OptionButton
+) -> Dictionary:
+	var model: String = ""
+	var provider: String = ""
+
+	if (
+		is_instance_valid(ai_model_manager)
+		and ai_model_manager.has_method("get_current_model")
+	):
+		model = String(ai_model_manager.get_current_model()).strip_edges()
+		if (
+			not model.is_empty()
+			and ai_model_manager.has_method("get_provider_for_model")
+		):
+			provider = String(
+				ai_model_manager.get_provider_for_model(model)
+			).strip_edges()
+
+	# UI fallback: model selector stores the raw model id in item metadata.
+	if model.is_empty() and is_instance_valid(ai_model_selector):
+		var idx: int = int(ai_model_selector.selected)
+		if idx >= 0 and idx < ai_model_selector.item_count:
+			if not ai_model_selector.is_item_disabled(idx):
+				var meta_any: Variant = ai_model_selector.get_item_metadata(idx)
+				if meta_any is String and not String(meta_any).strip_edges().is_empty():
+					model = String(meta_any).strip_edges()
+				else:
+					# Last resort: strip status badges from display text.
+					model = _strip_model_display_suffixes(
+						String(ai_model_selector.get_item_text(idx))
+					)
+
+	if (
+		provider.is_empty()
+		and not model.is_empty()
+		and is_instance_valid(ai_model_manager)
+		and ai_model_manager.has_method("get_provider_for_model")
+	):
+		provider = String(
+			ai_model_manager.get_provider_for_model(model)
+		).strip_edges()
+
+	if provider.is_empty() and is_instance_valid(api_provider_selector):
+		var provider_idx: int = int(api_provider_selector.selected)
+		if provider_idx >= 0 and provider_idx < api_provider_selector.item_count:
+			var provider_meta: Variant = api_provider_selector.get_item_metadata(
+				provider_idx
+			)
+			if provider_meta is String:
+				provider = String(provider_meta).strip_edges()
+
+	if provider.is_empty():
+		provider = "?"
+	if model.is_empty():
+		model = "?"
+	return {"provider": provider, "model": model}
+
+
+## Compact embedding status: "| Embed: local" or "| Embed: ollama/nomic-embed-text".
+static func format_embedding_status_suffix(ai_model_manager: Object) -> String:
+	if not is_instance_valid(ai_model_manager):
+		return " | Embed: local"
+	var embed_model: String = ""
+	var embed_provider: String = ""
+	if ai_model_manager.has_method("get_current_embedding_model"):
+		embed_model = String(
+			ai_model_manager.get_current_embedding_model()
+		).strip_edges()
+	if ai_model_manager.has_method("get_current_embedding_provider"):
+		embed_provider = String(
+			ai_model_manager.get_current_embedding_provider()
+		).strip_edges()
+	if embed_model.is_empty():
+		return " | Embed: local"
+	if embed_provider.is_empty():
+		return " | Embed: %s" % embed_model
+	return " | Embed: %s/%s" % [embed_provider, embed_model]
+
+
+static func _strip_model_display_suffixes(display_text: String) -> String:
+	var cleaned: String = display_text.strip_edges()
+	# Remove known UI suffixes appended by ModelSettingsController.
+	for suffix: String in ["  [embed]", "  [needs API key]", " [not installed]"]:
+		if cleaned.ends_with(suffix):
+			cleaned = cleaned.substr(0, cleaned.length() - suffix.length())
+	return cleaned.strip_edges()
 
 func _format_voice_status_from_health(health: Dictionary) -> String:
 	# Hub API spec (normative): /health returns {"ok":bool, "capabilities": {"voice_tts":bool, "voice_stt":bool, ...}}

@@ -146,6 +146,32 @@ size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 16
 alignment = 1
 
+[node name="EmbeddingRow" type="HBoxContainer" parent="MarginContainer/ScrollContainer/Main_VBoxContainer/Main_Menu_Container/TopButtonsContainer/AI_Model_Container"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="Embedding_Label" type="Label" parent="MarginContainer/ScrollContainer/Main_VBoxContainer/Main_Menu_Container/TopButtonsContainer/AI_Model_Container/EmbeddingRow"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 14
+text = "Embeddings"
+
+[node name="EmbeddingModelSelector" type="OptionButton" parent="MarginContainer/ScrollContainer/Main_VBoxContainer/Main_Menu_Container/TopButtonsContainer/AI_Model_Container/EmbeddingRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 12
+fit_to_longest_item = false
+tooltip_text = "Embedding model used by SynAxes Model themes. Independent of the chat model. Local TF-IDF when unset."
+
+[node name="PullEmbeddingModelButton" type="Button" parent="MarginContainer/ScrollContainer/Main_VBoxContainer/Main_Menu_Container/TopButtonsContainer/AI_Model_Container/EmbeddingRow"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Pull"
+tooltip_text = "Download the selected Ollama embedding model (ollama pull). Never runs automatically."
+
 [node name="ApiKeyRow" type="HBoxContainer" parent="MarginContainer/ScrollContainer/Main_VBoxContainer/Main_Menu_Container/TopButtonsContainer/AI_Model_Container"]
 layout_mode = 2
 size_flags_horizontal = 3

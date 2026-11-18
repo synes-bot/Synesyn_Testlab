@@ -95,9 +95,9 @@ The **Workflow** dropdown is populated from saved workflow artifacts on the Hub:
 
 If the workspace has no `json.workflow` artifacts yet, the selector remains empty until you save a workflow preset (or until the fallback list has entries).
 
-### Workflow preset tags (ScenSyn integration)
+### Workflow preset tags (ScenSyn and external clients)
 
-ScenSyn can enqueue image-generation jobs using SynPunkt's saved workflow presets. To make a preset discoverable by ScenSyn, **tag** the workflow preset when saving it.
+Clients can enqueue image-generation jobs using SynPunkt's saved workflow presets. To make a preset discoverable, **tag** the workflow preset when saving it. Tags are opaque strings in `metadata.preset.tags`; different clients look for different prefixes.
 
 **Where tags live**:
 - Clicking **Save Workflow Preset** stores a `json.workflow` artifact on the Hub.
@@ -108,6 +108,8 @@ ScenSyn can enqueue image-generation jobs using SynPunkt's saved workflow preset
 2. Load or paste a valid ComfyUI API workflow (prompt graph).
 3. In the **Preset Tags** field, enter a comma-separated list of tags.
 4. Click **Save Workflow Preset**.
+
+#### ScenSyn tags
 
 **Required tag (v1)**:
 - `scensyn:render_purpose=<purpose_id>`
@@ -130,6 +132,22 @@ ScenSyn can enqueue image-generation jobs using SynPunkt's saved workflow preset
 **Selection behavior**:
 ScenSyn identifies the active collection and scenario at runtime and selects the most specific matching preset, falling back in order:
 scenario + collection → collection → global.
+
+#### External client tags (example: Lumur)
+
+External clients that submit Hub renders may discover the same `json.workflow` presets by querying `metadata.preset.tags`. Lumur is one such client; the convention below is generic and does not hardcode a Hub URL or server.
+
+**Discovery tag**:
+- `lumur:surface_role=<role>` (example: `lumur:surface_role=floor`)
+
+**Optional scoping tags**:
+- `lumur:room=<room_id>`
+- `lumur:scenario=<scenario_key>`
+
+**Selection behavior** (most specific wins):
+role + room + scenario → role + room → role → none.
+
+A preset may carry both ScenSyn and external-client tags when the same workflow serves more than one product.
 
 ### Artifact details and provenance links
 

@@ -273,6 +273,8 @@ static func setup(panel: Object, plugin_ref, plugin_manager, p_content_state_res
 	if is_instance_valid(panel._model_settings_controller):
 		panel._model_settings_controller.populate_provider_selector()
 		panel._model_settings_controller.populate_model_selector()
+		if panel._model_settings_controller.has_method("populate_embedding_selector"):
+			panel._model_settings_controller.populate_embedding_selector()
 
 	return {"success": true}
 

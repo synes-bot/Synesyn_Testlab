@@ -105,6 +105,28 @@ in `OllamaRuntimeService`, while incremental NDJSON chat transport is isolated i
   unloading of the previous model; regular requests retain a five-minute
   `keep_alive`.
 
+## Embedding model selection
+
+Chat model and embedding model are independent. SynAxes **Model themes** and
+other Tier-3 embedding callers read the embedding selection, never the chat
+model.
+
+- Config keys: `apps.syntree.selected_embedding_model` and
+  `apps.syntree.selected_embedding_provider`. Empty model → local TF-IDF
+  fallback.
+- `AIModelManager` exposes `get/set_current_embedding_model`,
+  `get_available_embedding_models`, `model_supports_embeddings` (cached), and
+  optional `pull_ollama_embedding_model` (explicit user action via `/api/pull`).
+- Recommended Ollama options (tested): `nomic-embed-text` (768-d) and
+  `all-minilm` (384-d). OpenAI option: `text-embedding-3-small`.
+- The chat-model `[embed]` badge is **per model** (Ollama `/api/show`
+  capabilities or name heuristics; OpenAI only for `text-embedding-*`), not
+  provider-wide.
+- Loaders accept an optional embedding-model id in
+  `prepare_embeddings_request(texts, embedding_model)`.
+- Hub hash / `synaxes.embed_text` job wiring is unchanged in this slice
+  (follow-up).
+
 ## Documentation Preservation
 - Interface headers (COMPONENT, RESPONSIBILITY, etc.) must NOT be removed or modified without explicitly changing the component's architecture
 - ARCHITECTURE-BOUNDARY comments serve as critical guardrails and should be preserved across code changes

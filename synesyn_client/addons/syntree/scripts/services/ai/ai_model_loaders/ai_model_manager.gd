@@ -12,14 +12,19 @@ const GeminiModelLoader = preload("res://addons/syntree/scripts/services/ai/ai_m
 const DeepseekModelLoader = preload("res://addons/syntree/scripts/services/ai/ai_model_loaders/deepseek_model.gd")
 const XAIModelLoader = preload("res://addons/syntree/scripts/services/ai/ai_model_loaders/xai_model.gd")
 const RuntimeConfigScript = preload("res://addons/synesyn_core/scripts/runtime_config.gd")
+const EmbeddingModelCatalogScript = preload(
+	"res://addons/syntree/scripts/services/ai/embedding_model_catalog.gd"
+)
 const DEFAULT_OLLAMA_BASE_URL: String = "http://127.0.0.1:11434"
 
 # Signals
 signal model_changed(model_name: String)
+signal embedding_model_changed(provider_name: String, model_name: String)
 signal provider_registered(provider_name: String)
 signal provider_removed(provider_name: String)
 signal operation_failed(operation: String, error: String)
 signal models_changed(models: Array[String])
+signal embedding_models_changed(models: Array)
 signal provider_status_changed(provider_name: String, status: Dictionary)
 signal inference_metrics_updated(model_name: String, metrics: Dictionary)
 
@@ -40,6 +45,11 @@ var _ollama_refresh_on_startup: bool = true
 # selection during the session overrides it.
 var _persisted_selected_model: String = ""
 var _persisted_model_restored: bool = false
+# Dedicated embedding model (independent of chat). Empty = local TF-IDF fallback.
+var _current_embedding_model: String = ""
+var _current_embedding_provider: String = ""
+# Cache key "provider/model" -> bool. Filled from /api/show + heuristics; UI reads only.
+var _embedding_capability_cache: Dictionary = {}
 
 func setup(api_keys: Dictionary = {}, p_config_manager = null) -> Dictionary:
 	_config_manager = p_config_manager
@@ -148,10 +158,167 @@ func setup(api_keys: Dictionary = {}, p_config_manager = null) -> Dictionary:
 		and _current_model == _persisted_selected_model
 	)
 
+	_seed_embedding_capability_cache()
+
 	return {"success": true, "error": ""}
 
 func get_current_model() -> String:
 	return _current_model
+
+
+func get_current_embedding_model() -> String:
+	return _current_embedding_model
+
+
+func get_current_embedding_provider() -> String:
+	return _current_embedding_provider
+
+
+## Returns Array of Dictionaries:
+## {provider, model, installed, recommended, label, pull_hint, dim}
+func get_available_embedding_models() -> Array:
+	var options: Array = []
+	var seen: Dictionary = {}
+
+	# Recommended Ollama models always appear (installed or not).
+	var ollama_installed: Dictionary = {}
+	var ollama_loader: BaseAIModelLoader = get_provider_loader("ollama")
+	if ollama_loader:
+		for model_any: Variant in _get_models_for_loader(ollama_loader):
+			var installed_id: String = String(model_any).strip_edges()
+			if not installed_id.is_empty():
+				ollama_installed[_base_model_name(installed_id)] = installed_id
+				if model_supports_embeddings("ollama", installed_id):
+					_add_embedding_option(
+						options,
+						seen,
+						"ollama",
+						installed_id,
+						true,
+						false
+					)
+
+	for recommended_id: String in EmbeddingModelCatalogScript.recommended_ollama_ids():
+		var installed_match: String = String(
+			ollama_installed.get(_base_model_name(recommended_id), "")
+		)
+		var is_installed: bool = not installed_match.is_empty()
+		var model_id: String = (
+			installed_match if is_installed else recommended_id
+		)
+		_add_embedding_option(
+			options,
+			seen,
+			"ollama",
+			model_id,
+			is_installed,
+			true
+		)
+
+	# OpenAI embedding models when a key is configured.
+	var openai_loader: BaseAIModelLoader = get_provider_loader("openai")
+	var openai_key: String = get_api_key("openai")
+	if openai_loader and not openai_key.is_empty():
+		for openai_id: String in EmbeddingModelCatalogScript.openai_embedding_ids():
+			_add_embedding_option(
+				options,
+				seen,
+				"openai",
+				openai_id,
+				true,
+				true
+			)
+
+	return options
+
+
+func set_current_embedding_model(
+	provider_name: String,
+	model_name: String
+) -> Dictionary:
+	var provider_key: String = provider_name.strip_edges().to_lower()
+	var resolved_model: String = model_name.strip_edges()
+	# Empty model clears selection → SynAxes falls back to local TF-IDF.
+	if resolved_model.is_empty():
+		_current_embedding_model = ""
+		_current_embedding_provider = ""
+		_persist_selected_embedding_model("", "")
+		embedding_model_changed.emit("", "")
+		return {"success": true, "error": ""}
+
+	if provider_key.is_empty():
+		return {"success": false, "error": "embedding_provider_required"}
+
+	if provider_key == "openai":
+		if not EmbeddingModelCatalogScript.is_openai_embedding_model(resolved_model):
+			return {"success": false, "error": "not_an_openai_embedding_model"}
+		if get_api_key("openai").is_empty():
+			return {"success": false, "error": "openai_api_key_required"}
+	elif provider_key == "ollama":
+		# Allow selecting a recommended model that is not yet installed; callers
+		# show [not installed] + pull hint. Requests fail until pulled.
+		pass
+	else:
+		return {"success": false, "error": "unsupported_embedding_provider"}
+
+	_current_embedding_model = resolved_model
+	_current_embedding_provider = provider_key
+	_persist_selected_embedding_model(provider_key, resolved_model)
+	_embedding_capability_cache["%s/%s" % [provider_key, resolved_model]] = true
+	embedding_model_changed.emit(provider_key, resolved_model)
+	return {"success": true, "error": ""}
+
+
+## Per-model embedding capability for the [embed] badge. Cached; never blocks.
+func model_supports_embeddings(provider_name: String, model_name: String) -> bool:
+	var provider_key: String = provider_name.strip_edges().to_lower()
+	var resolved_model: String = model_name.strip_edges()
+	if provider_key.is_empty() or resolved_model.is_empty():
+		return false
+	var cache_key: String = "%s/%s" % [provider_key, resolved_model]
+	if _embedding_capability_cache.has(cache_key):
+		return bool(_embedding_capability_cache[cache_key])
+
+	var is_capable: bool = false
+	var loader: BaseAIModelLoader = get_provider_loader(provider_key)
+	if loader and loader.has_method("model_supports_embeddings"):
+		is_capable = bool(loader.call("model_supports_embeddings", resolved_model))
+	else:
+		var capabilities: Array = []
+		if loader and loader.has_method("get_model_metadata"):
+			var metadata: Dictionary = loader.call("get_model_metadata", resolved_model)
+			var capabilities_any: Variant = metadata.get("capabilities", [])
+			if typeof(capabilities_any) == TYPE_ARRAY:
+				capabilities = capabilities_any
+		is_capable = EmbeddingModelCatalogScript.model_supports_embeddings(
+			provider_key,
+			resolved_model,
+			capabilities
+		)
+	_embedding_capability_cache[cache_key] = is_capable
+	return is_capable
+
+
+func pull_ollama_embedding_model(model_name: String) -> Dictionary:
+	if (
+		not is_instance_valid(_api_service)
+		or not _api_service.has_method("pull_ollama_model")
+	):
+		return {"success": false, "error": "api_service_unavailable"}
+	var resolved_model: String = model_name.strip_edges()
+	if resolved_model.is_empty():
+		return {"success": false, "error": "model_required"}
+	var result: Dictionary = await _api_service.call(
+		"pull_ollama_model",
+		resolved_model
+	)
+	if bool(result.get("success", false)):
+		await refresh_ollama_models()
+	return result
+
+
+func get_embedding_pull_hint(model_name: String) -> String:
+	return EmbeddingModelCatalogScript.pull_hint(model_name)
 
 func get_available_models() -> Array:
 	return _available_models
@@ -324,6 +491,8 @@ func refresh_ollama_models() -> Dictionary:
 	_provider_status["ollama"] = result.duplicate(true)
 	provider_status_changed.emit("ollama", result.duplicate(true))
 	models_changed.emit(_typed_model_list())
+	_refresh_embedding_capability_cache_from_ollama(metadata)
+	embedding_models_changed.emit(get_available_embedding_models())
 	return result
 
 
@@ -504,6 +673,7 @@ func _rebuild_available_models() -> void:
 		and _persisted_selected_model in _available_models
 	):
 		set_current_model(_persisted_selected_model)
+	embedding_models_changed.emit(get_available_embedding_models())
 
 
 func _typed_model_list() -> Array[String]:
@@ -545,6 +715,12 @@ func _load_ollama_runtime_settings() -> void:
 	_persisted_selected_model = String(
 		syntree_config.get("selected_model", "")
 	).strip_edges()
+	_current_embedding_model = String(
+		syntree_config.get("selected_embedding_model", "")
+	).strip_edges()
+	_current_embedding_provider = String(
+		syntree_config.get("selected_embedding_provider", "")
+	).strip_edges().to_lower()
 
 
 func _save_ollama_runtime_settings() -> void:
@@ -591,3 +767,132 @@ func _persist_selected_model(model_name: String) -> void:
 	apps_config["syntree"] = syntree_config
 	runtime_config["apps"] = apps_config
 	RuntimeConfigScript.save_config(runtime_config)
+
+
+func _persist_selected_embedding_model(
+	provider_name: String,
+	model_name: String
+) -> void:
+	var runtime_config: Dictionary = RuntimeConfigScript.load_config()
+	var apps_any: Variant = runtime_config.get("apps", {})
+	var apps_config: Dictionary = (
+		apps_any.duplicate(true)
+		if typeof(apps_any) == TYPE_DICTIONARY
+		else {}
+	)
+	var syntree_any: Variant = apps_config.get("syntree", {})
+	var syntree_config: Dictionary = (
+		syntree_any.duplicate(true)
+		if typeof(syntree_any) == TYPE_DICTIONARY
+		else {}
+	)
+	syntree_config["selected_embedding_model"] = model_name
+	syntree_config["selected_embedding_provider"] = provider_name
+	apps_config["syntree"] = syntree_config
+	runtime_config["apps"] = apps_config
+	RuntimeConfigScript.save_config(runtime_config)
+
+
+func _seed_embedding_capability_cache() -> void:
+	for provider_name_any: Variant in _model_loaders.keys():
+		var provider_key: String = String(provider_name_any)
+		var loader: BaseAIModelLoader = get_provider_loader(provider_key)
+		if not loader:
+			continue
+		for model_any: Variant in _get_models_for_loader(loader):
+			var model_id: String = String(model_any).strip_edges()
+			if model_id.is_empty():
+				continue
+			# Warm cache without awaiting network; heuristics/metadata only.
+			model_supports_embeddings(provider_key, model_id)
+	# Recommended Ollama embedding models are capable by definition.
+	for recommended_id: String in EmbeddingModelCatalogScript.recommended_ollama_ids():
+		_embedding_capability_cache["ollama/%s" % recommended_id] = true
+	for openai_id: String in EmbeddingModelCatalogScript.openai_embedding_ids():
+		_embedding_capability_cache["openai/%s" % openai_id] = true
+
+
+func _refresh_embedding_capability_cache_from_ollama(metadata: Dictionary) -> void:
+	for model_id_any: Variant in metadata.keys():
+		var model_id: String = String(model_id_any).strip_edges()
+		if model_id.is_empty():
+			continue
+		var meta_any: Variant = metadata.get(model_id_any, {})
+		var meta: Dictionary = (
+			meta_any if typeof(meta_any) == TYPE_DICTIONARY else {}
+		)
+		var capabilities_any: Variant = meta.get("capabilities", [])
+		var capabilities: Array = (
+			capabilities_any if typeof(capabilities_any) == TYPE_ARRAY else []
+		)
+		var is_capable: bool = EmbeddingModelCatalogScript.model_supports_embeddings(
+			"ollama",
+			model_id,
+			capabilities
+		)
+		_embedding_capability_cache["ollama/%s" % model_id] = is_capable
+
+
+func _add_embedding_option(
+	options: Array,
+	seen: Dictionary,
+	provider_key: String,
+	model_id: String,
+	is_installed: bool,
+	is_recommended: bool
+) -> void:
+	var dedupe_key: String = "%s/%s" % [
+		provider_key,
+		_base_model_name(model_id),
+	]
+	if seen.has(dedupe_key):
+		# Prefer the installed/recommended flags if we see the model again.
+		for option_any: Variant in options:
+			if typeof(option_any) != TYPE_DICTIONARY:
+				continue
+			var existing: Dictionary = option_any
+			if (
+				String(existing.get("provider", "")) == provider_key
+				and _base_model_name(String(existing.get("model", "")))
+				== _base_model_name(model_id)
+			):
+				if is_installed:
+					existing["installed"] = true
+					existing["model"] = model_id
+				if is_recommended:
+					existing["recommended"] = true
+				existing["label"] = EmbeddingModelCatalogScript.display_label_for(
+					provider_key,
+					String(existing.get("model", model_id)),
+					bool(existing.get("installed", false))
+				)
+				existing["pull_hint"] = (
+					""
+					if bool(existing.get("installed", false))
+					else EmbeddingModelCatalogScript.pull_hint(
+						String(existing.get("model", model_id))
+					)
+				)
+		return
+	seen[dedupe_key] = true
+	options.append({
+		"provider": provider_key,
+		"model": model_id,
+		"installed": is_installed,
+		"recommended": is_recommended,
+		"dim": EmbeddingModelCatalogScript.expected_dim(model_id),
+		"label": EmbeddingModelCatalogScript.display_label_for(
+			provider_key,
+			model_id,
+			is_installed
+		),
+		"pull_hint": (
+			""
+			if is_installed
+			else EmbeddingModelCatalogScript.pull_hint(model_id)
+		),
+	})
+
+
+func _base_model_name(model_id: String) -> String:
+	return model_id.strip_edges().get_slice(":", 0).to_lower()
