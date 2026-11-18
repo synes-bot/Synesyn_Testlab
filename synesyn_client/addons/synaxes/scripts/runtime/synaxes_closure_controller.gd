@@ -150,7 +150,11 @@ func build_dream_inbox_from_patterns(patterns: Array) -> void:
 					preview_parts.append(content)
 
 		var preview_str := ", ".join(preview_parts) if not preview_parts.is_empty() else "(no content preview)"
-		var cand_name := "Cluster #%d (%d items)" % [pid, item_count]
+		var provisional: String = str(p.get("provisional_label", "")).strip_edges()
+		var label_source: String = str(p.get("label_source", "machine_proposed"))
+		var label_terms: Array = p.get("label_terms", [])
+		# Prefill editable name with provisional label; never auto-commit (human commits).
+		var cand_name: String = provisional if not provisional.is_empty() else ("Cluster #%d" % pid)
 		var intent := "Grouped %d items by similarity (confidence %.0f%%). Samples: %s" % [item_count, conf * 100.0, preview_str]
 
 		var item_ids: Array[String] = []
@@ -182,6 +186,10 @@ func build_dream_inbox_from_patterns(patterns: Array) -> void:
 			"item_ids": item_ids,
 			"items": items,
 			"confidence": conf,
+			"label_is_provisional": true,
+			"label_source": label_source,
+			"label_terms": label_terms,
+			"provisional_label": cand_name,
 		})
 
 	if dream_inbox_list:
@@ -262,14 +270,24 @@ func on_dream_candidate_selected(idx: int) -> void:
 		conf_label = "high"
 	elif conf >= 0.4:
 		conf_label = "medium"
+	var is_provisional: bool = bool(c.get("label_is_provisional", false))
 	if selected_label:
-		selected_label.text = "Editing: %s | %d items | %s confidence (%.0f%%)" % [cand_name, items_arr.size(), conf_label, conf * 100.0]
+		var prov_note: String = " | provisional (editable — machine proposed)" if is_provisional else ""
+		selected_label.text = "Editing: %s | %d items | %s confidence (%.0f%%)%s" % [
+			cand_name, items_arr.size(), conf_label, conf * 100.0, prov_note,
+		]
+	if closure_name_edit and is_provisional:
+		closure_name_edit.placeholder_text = "Provisional theme name — edit before Commit"
 
 	# Populate items in the candidate and available items for adding
 	_refresh_candidate_items_list(c)
 	_refresh_available_items_list(c)
 
-	_cstatus("Review items and optional Orientation (A–D). Remove/add items, then Commit.")
+	_cstatus(
+		"Provisional name prefilled (machine proposed). Edit freely, then Commit — nothing is saved until you Commit."
+		if is_provisional
+		else "Review items and optional Orientation (A–D). Remove/add items, then Commit."
+	)
 	update_decision_buttons()
 	candidate_editing.emit(idx)
 
@@ -442,6 +460,8 @@ func commit_closure(provenance_ctx: Dictionary, overrides: Dictionary = {}) -> D
 	if not orient_quadrant.is_empty():
 		closure["orientation"] = ClosureOrientationScript.build_annotation(orient_quadrant)
 
+	var proposed_label: String = str(c.get("provisional_label", c.get("name", ""))).strip_edges()
+	var label_was_edited: bool = cname != proposed_label
 	var metadata := {
 		"provenance": {
 			"generated_by": "synaxes.commit_closure",
@@ -454,6 +474,14 @@ func commit_closure(provenance_ctx: Dictionary, overrides: Dictionary = {}) -> D
 				"dim_method": int(provenance_ctx.get("dim_method", 0)),
 				"clusters": int(provenance_ctx.get("clusters_count", 0)),
 				"orientation_quadrant": orient_quadrant,
+			},
+			"theme_label": {
+				"machine_proposed": true,
+				"proposed_label": proposed_label,
+				"label_source": str(c.get("label_source", "machine_proposed")),
+				"label_terms": c.get("label_terms", []),
+				"human_edited": label_was_edited,
+				"committed_label": cname,
 			},
 		}
 	}
@@ -859,17 +887,21 @@ func _dream_inbox_row_text(c: Dictionary) -> String:
 	var conf: float = float(c.get("confidence", 0.0))
 	var conf_pct: String = "%.0f%%" % (conf * 100.0)
 	var cand_name: String = str(c.get("name", "Candidate"))
+	var is_provisional: bool = bool(c.get("label_is_provisional", false))
+	var name_display: String = ("~ %s" % cand_name) if is_provisional else cand_name
 	var sample: String = str(c.get("intent", "")).strip_edges()
 	if sample.find("Samples:") != -1:
 		sample = sample.get_slice("Samples:", 1).strip_edges()
 	if sample.length() > 60:
 		sample = sample.left(57) + "..."
 	var badge: String = _orientation_badge(str(c.get("orientation_quadrant", "")))
-	return "%s %s • %s • %s • %s" % [
+	var prov_tag: String = "provisional" if is_provisional else "named"
+	return "%s %s • %s • %s • %s • %s" % [
 		badge,
-		cand_name,
+		name_display,
 		("%d items" % int(c.get("items", []).size())),
 		conf_pct,
+		prov_tag,
 		sample,
 	]
 
