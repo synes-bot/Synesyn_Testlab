@@ -1,10 +1,10 @@
 ---
 id: PRD-SYNAXES-CLOSURE-MAP-ORIENTATION
 title: SynAxes Closure Map orientation tags and coverage
-status: implementing
+status: review
 version: "0.1"
 owner: SynAxes / product
-last_reviewed: 2026-08-07
+last_reviewed: 2026-11-15
 primary_users: ["facilitator", "curator", "researcher", "developer"]
 supersedes: null
 ---
@@ -167,8 +167,9 @@ automated substrate checks cover `ui.closure` fields.
 | Coverage recompute | on `reload_saved_closures()` via `get_artifact_json` | Done |
 | Docs | Closure Map + ADR 0015 | Done |
 
-Manual acceptance still required for REQ-CMO-001–005 in a live Hub session.
-Later: refresh technical-review “4D” wording; tetrahedral edges; Proxistance UX.
+Tracker (`implementation_tracking/active/05_SynAxes.md` §G) marks REQ-CMO-001–004 done in code.
+**Outstanding:** live-Hub manual QA pass for REQ-CMO-001–005 (tag → commit → reload coverage).
+Later: tetrahedral edges; Proxistance UX.
 
 ## Links
 

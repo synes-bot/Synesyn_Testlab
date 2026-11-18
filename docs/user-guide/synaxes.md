@@ -51,7 +51,7 @@ Controls under Advanced:
 | Embedding tier | Choosing between **Local themes** (default TF-IDF) and **Model themes** |
 | Cache and job stats | Inspecting embedding caches and Hub job runs |
 
-**Model themes:** When an embedding-capable SynTree model is active, SynAxes offers a disclosed opt-in that names the provider. Enabling it sends item text to that provider and consumes API credit. Consent is remembered per provider; SynAxes never enables model themes silently. Without consent, discovery stays on local themes.
+**Model themes:** SynAxes uses the **embedding model** selected in SynTree (Tools → SynTree → Embeddings), not the chat model. Recommended local options that have been tested are `nomic-embed-text` (768-d) and `all-minilm` (384-d) via Ollama; for OpenAI, `text-embedding-3-small`. When nothing is selected, discovery stays on local themes (TF-IDF). When an embedding model is selected, SynAxes offers a disclosed opt-in that names the provider. Enabling it sends item text to that provider (and may consume API credit for hosted providers). Consent is remembered per provider; SynAxes never enables model themes silently. Without consent, discovery stays on local themes. Cache and provenance record provider + embedding model id + vector dimension — switching models with different widths does not mix vectors.
 
 When STFX Store admissibility filters are enabled, excluded items are withheld from import and reported in the status bar and Advanced panel (ADR 0016).
 
