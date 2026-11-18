@@ -260,8 +260,12 @@ func persist_analysis_results_to_hub(
 	k: int
 ) -> Dictionary:
 	## Returns {projection_artifact_id, cluster_artifact_id, analysis_run_artifact_id}.
+	## Demo / session imports may have an empty context_graph_artifact_id; still persist
+	## so "Reload last analysis" works on the default navigable path (REQ-NDP-017).
 	var result := {"projection_artifact_id": "", "cluster_artifact_id": "", "analysis_run_artifact_id": ""}
-	if context_graph_artifact_id.is_empty() or data.is_empty():
+	if data.is_empty():
+		return result
+	if hub == null:
 		return result
 
 	var ids_and_vectors: Dictionary = extract_ids_and_vectors(data)
@@ -269,6 +273,17 @@ func persist_analysis_results_to_hub(
 	var vectors: Array = ids_and_vectors.get("vectors", [])
 	if item_ids.is_empty() or vectors.is_empty() or item_ids.size() != vectors.size():
 		return result
+
+	var ctx_id: String = context_graph_artifact_id.strip_edges()
+	var provenance_inputs: Array = []
+	if not ctx_id.is_empty():
+		provenance_inputs.append({"type": "artifact", "id": ctx_id})
+	else:
+		provenance_inputs.append({
+			"type": "synaxes.local_import",
+			"item_count": item_ids.size(),
+			"note": "Demo or non-graph import; no ui.context_graph id",
+		})
 
 	# 1) Projection artifact (item_id -> [x,y,z])
 	var positions: Array = DimReductionScript.reduce_dimensionality(vectors, dim_method_id)
@@ -288,13 +303,13 @@ func persist_analysis_results_to_hub(
 		"schema_version": 1,
 		"method": dim_method_id,
 		"dim": 3,
-		"input_set": {"context_graph_artifact_id": context_graph_artifact_id, "item_ids": item_ids},
+		"input_set": {"context_graph_artifact_id": ctx_id, "item_ids": item_ids},
 		"coords": coords,
 	}
 	var projection_meta := {
 		"provenance": {
 			"generated_by": "synaxes.discover_patterns",
-			"inputs": [{"type": "artifact", "id": context_graph_artifact_id}],
+			"inputs": provenance_inputs,
 			"parameters": {"dim_method": dim_method_id, "k": k, "discovery_method": discovery_method_id, "item_count": item_ids.size()},
 		}
 	}
@@ -331,14 +346,14 @@ func persist_analysis_results_to_hub(
 		"schema_version": 1,
 		"method": discovery_method_id,
 		"k": k,
-		"input_set": {"context_graph_artifact_id": context_graph_artifact_id, "item_ids": item_ids},
+		"input_set": {"context_graph_artifact_id": ctx_id, "item_ids": item_ids},
 		"projection_artifact_id": result["projection_artifact_id"],
 		"clusters": clusters,
 	}
 	var cluster_meta := {
 		"provenance": {
 			"generated_by": "synaxes.discover_patterns",
-			"inputs": [{"type": "artifact", "id": context_graph_artifact_id}],
+			"inputs": provenance_inputs,
 			"parameters": {"dim_method": dim_method_id, "k": k, "discovery_method": discovery_method_id, "cluster_count": clusters.size()},
 		}
 	}
@@ -351,7 +366,7 @@ func persist_analysis_results_to_hub(
 		var analysis_run := {
 			"schema": "synaxes.analysis_run",
 			"schema_version": 1,
-			"context_graph_artifact_id": context_graph_artifact_id,
+			"context_graph_artifact_id": ctx_id,
 			"item_ids": item_ids,
 			"methods": {"discovery_method": discovery_method_id, "dim_method": dim_method_id, "k": k},
 			"outputs": {
@@ -359,14 +374,13 @@ func persist_analysis_results_to_hub(
 				"cluster_artifact_id": result["cluster_artifact_id"],
 			}
 		}
+		var analysis_inputs: Array = provenance_inputs.duplicate()
+		analysis_inputs.append({"type": "artifact", "id": result["projection_artifact_id"]})
+		analysis_inputs.append({"type": "artifact", "id": result["cluster_artifact_id"]})
 		var analysis_meta := {
 			"provenance": {
 				"generated_by": "synaxes.analysis_run",
-				"inputs": [
-					{"type": "artifact", "id": context_graph_artifact_id},
-					{"type": "artifact", "id": result["projection_artifact_id"]},
-					{"type": "artifact", "id": result["cluster_artifact_id"]},
-				],
+				"inputs": analysis_inputs,
 				"parameters": {"discovery_method": discovery_method_id, "dim_method": dim_method_id, "k": k},
 			}
 		}
@@ -376,13 +390,13 @@ func persist_analysis_results_to_hub(
 
 	# 4) Entity/Relation alignment (best-effort)
 	if not result["cluster_artifact_id"].is_empty() and clusters.size() > 0:
-		await _persist_cluster_membership(data, clusters, context_graph_artifact_id, result["cluster_artifact_id"])
+		await _persist_cluster_membership(data, clusters, ctx_id, result["cluster_artifact_id"])
 
 	# Audit event
 	await hub.create_event(
 		"synaxes.analysis.persisted",
 		{
-			"context_graph_artifact_id": context_graph_artifact_id,
+			"context_graph_artifact_id": ctx_id,
 			"projection_artifact_id": result["projection_artifact_id"],
 			"cluster_artifact_id": result["cluster_artifact_id"],
 			"analysis_run_artifact_id": result["analysis_run_artifact_id"],

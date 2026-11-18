@@ -14,6 +14,9 @@ const EmbeddingCacheScript = preload("res://addons/synaxes/scripts/data_processi
 const EmbeddingModelCatalogScript = preload(
 	"res://addons/syntree/scripts/services/ai/embedding_model_catalog.gd"
 )
+const SynAxesThemeLabelerScript = preload(
+	"res://addons/synaxes/scripts/analysis/synaxes_theme_labeler.gd"
+)
 
 # Dependencies — set by the runtime controller after construction.
 var engine: DiscoveryEngine
@@ -143,13 +146,14 @@ func reload_last_analysis(
 		dim_id = int(hub_result.get("dim_id", dim_id))
 	if hub_result.has("clusters_k"):
 		clusters_k = int(hub_result.get("clusters_k", clusters_k))
+	patterns = _annotate_provisional_labels(patterns)
+	last_patterns = patterns
 	_populate_pattern_viewer(patterns)
 	var hydrated: Array = hub_result.get("hydrated_data", [])
 	last_discover_item_count = hydrated.size() if not hydrated.is_empty() else existing_data.size()
 	var theme_count: int = _count_theme_patterns(patterns)
 	_status(human_discover_summary(theme_count, last_discover_item_count))
-	if bottom_tabs and bottom_tabs.get_tab_count() > 0:
-		bottom_tabs.current_tab = 0
+	# Tab focus is owned by the runtime (Overview after Discover; Closures for Propose-themes).
 	if closure_ctrl:
 		var dream_source: Array = hydrated if not hydrated.is_empty() else existing_data
 		closure_ctrl.all_data = dream_source
@@ -199,7 +203,6 @@ func discover(active_data: Array, context_graph_artifact_id: String = "", all_da
 	else:
 		_status("Discovering patterns on %d selected items…" % active_data.size())
 		patterns = engine.discover_patterns(resolved_method, resolved_dim, resolved_k)
-		last_patterns = patterns
 		if pipeline:
 			var persist_result: Dictionary = await pipeline.persist_analysis_results_to_hub(
 				patterns, active_data, context_graph_artifact_id,
@@ -209,13 +212,14 @@ func discover(active_data: Array, context_graph_artifact_id: String = "", all_da
 			last_cluster_artifact_id = str(persist_result.get("cluster_artifact_id", ""))
 			last_analysis_run_artifact_id = str(persist_result.get("analysis_run_artifact_id", ""))
 
+	patterns = _annotate_provisional_labels(patterns)
+	last_patterns = patterns
 	_populate_pattern_viewer(patterns)
 	last_discover_item_count = active_data.size()
 	var theme_count: int = _count_theme_patterns(patterns)
 	_status(human_discover_summary(theme_count, active_data.size()))
 
-	if bottom_tabs and bottom_tabs.get_tab_count() > 0:
-		bottom_tabs.current_tab = 0
+	# Tab focus is owned by the runtime (Overview after Discover; Closures for Propose-themes).
 
 	if closure_ctrl:
 		var dream_source: Array = all_data if not all_data.is_empty() else active_data
@@ -582,6 +586,12 @@ func _data_has_vectors(data: Array) -> bool:
 		if typeof(vec_any) == TYPE_ARRAY and (vec_any as Array).size() > 0:
 			return true
 	return false
+
+
+func _annotate_provisional_labels(patterns: Array) -> Array:
+	## Machine-propose short theme labels; never auto-commit (human commits in Dream Inbox).
+	var labeler: RefCounted = SynAxesThemeLabelerScript.new()
+	return labeler.annotate_patterns(patterns)
 
 
 func _populate_pattern_viewer(patterns: Array) -> void:
