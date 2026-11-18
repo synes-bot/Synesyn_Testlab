@@ -3,6 +3,10 @@ extends BaseAIModelLoader
 
 class_name OpenAIModelLoader
 
+const EmbeddingModelCatalogScript = preload(
+	"res://addons/syntree/scripts/services/ai/embedding_model_catalog.gd"
+)
+
 # Constants
 const AVAILABLE_MODELS = [
 	# See OpenAI model docs:
@@ -115,7 +119,7 @@ func validate_settings(settings: Dictionary) -> Dictionary:
 	return errors
 
 # ── Embeddings (Tier 3) ───────────────────────────────────────────────────
-# OpenAI /v1/embeddings uses a dedicated embedding model.
+# OpenAI /v1/embeddings uses a dedicated embedding model (not the chat model).
 
 const EMBEDDING_MODEL := "text-embedding-3-small"
 
@@ -125,8 +129,24 @@ func supports_embeddings() -> bool:
 func get_embeddings_url(_api_key_to_use: String = "") -> String:
 	return "https://api.openai.com/v1/embeddings"
 
-func prepare_embeddings_request(texts: Array) -> Dictionary:
-	return {"model": EMBEDDING_MODEL, "input": texts}
+func prepare_embeddings_request(
+	texts: Array,
+	embedding_model: String = ""
+) -> Dictionary:
+	var embed_model: String = embedding_model.strip_edges()
+	if embed_model.is_empty():
+		embed_model = EMBEDDING_MODEL
+	return {"model": embed_model, "input": texts}
+
+
+## Chat completion models are not embedding models. Only text-embedding-* ids.
+func model_supports_embeddings(requested_model: String = "") -> bool:
+	var resolved_model: String = (
+		requested_model.strip_edges()
+		if not requested_model.is_empty()
+		else model_name
+	)
+	return EmbeddingModelCatalogScript.is_openai_embedding_model(resolved_model)
 
 func get_embeddings_headers(api_key_to_use: String = "") -> PackedStringArray:
 	return get_headers(api_key_to_use)

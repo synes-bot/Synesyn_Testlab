@@ -6,6 +6,8 @@ class_name ModelSettingsController
 var _ai_model_manager: Object = null
 
 var _ai_model_selector: OptionButton = null
+var _embedding_model_selector: OptionButton = null
+var _pull_embedding_model_button: Button = null
 var _api_provider_selector: OptionButton = null
 var _api_key_input: LineEdit = null
 var _ollama_status_label: Label = null
@@ -35,10 +37,14 @@ func setup(
 		ollama_endpoint_input: LineEdit,
 		show_error_cb: Callable,
 		emit_operation_failed_cb: Callable,
-		desired_default_model: String = "gemma4:26b"
+		desired_default_model: String = "gemma4:26b",
+		embedding_model_selector: OptionButton = null,
+		pull_embedding_model_button: Button = null
 	) -> void:
 	_ai_model_manager = ai_model_manager
 	_ai_model_selector = ai_model_selector
+	_embedding_model_selector = embedding_model_selector
+	_pull_embedding_model_button = pull_embedding_model_button
 	_api_provider_selector = api_provider_selector
 	_api_key_input = api_key_input
 	_ollama_status_label = ollama_status_label
@@ -77,6 +83,7 @@ func setup(
 		_ollama_endpoint_input.text = String(
 			_ai_model_manager.get_ollama_base_url()
 		)
+	populate_embedding_selector()
 
 func populate_provider_selector() -> void:
 	if not is_instance_valid(_api_provider_selector):
@@ -432,6 +439,8 @@ func on_api_key_changed(new_text: String = "") -> void:
 				_emit_operation_failed_cb.call("set_api_key", str(res.get("error", "Failed to set API key")), str(res.get("details", "")))
 			return
 		_try_apply_pending_model_after_key()
+		if provider_key == "openai":
+			populate_embedding_selector()
 
 func _try_apply_pending_model_after_key() -> void:
 	var pending := _pending_model_after_key.strip_edges()
@@ -447,6 +456,7 @@ func _try_apply_pending_model_after_key() -> void:
 	_pending_model_after_key = ""
 	if bool(res.get("success", false)):
 		populate_model_selector()
+		populate_embedding_selector()
 		sync_ui_from_manager()
 	elif _show_error_cb.is_valid():
 		_show_error_cb.call("Model Selection Error", str(res.get("error", "Unknown error")))
@@ -455,6 +465,9 @@ func _try_apply_pending_model_after_key() -> void:
 func sync_ui_from_manager(_ignored: Variant = null) -> void:
 	sync_model_selector_from_current_model()
 	sync_provider_selector_from_current_model()
+	# Embedding selector is rebuilt when the catalog changes; keep selection synced.
+	if is_instance_valid(_embedding_model_selector):
+		populate_embedding_selector()
 
 func sync_model_selector_from_current_model() -> void:
 	if not is_instance_valid(_ai_model_manager) or not is_instance_valid(_ai_model_selector):
@@ -565,15 +578,218 @@ func _clear_api_key_field() -> void:
 	if was_connected:
 		_api_key_input.text_changed.connect(on_api_key_changed)
 
-func _check_embedding_support(provider_key: String, _model_name: String) -> bool:
-	## Check if this provider supports embeddings via its model loader.
+func _check_embedding_support(provider_key: String, model_name: String) -> bool:
+	## Per-model embedding capability (cached on AIModelManager). Not provider-wide.
 	if not is_instance_valid(_ai_model_manager):
 		return false
-	if not _ai_model_manager.has_method("get_provider_loader"):
-		return false
-	var loader: Variant = _ai_model_manager.get_provider_loader(provider_key)
-	if not loader:
-		return false
-	if loader.has_method("supports_embeddings"):
-		return loader.supports_embeddings()
+	if _ai_model_manager.has_method("model_supports_embeddings"):
+		return bool(
+			_ai_model_manager.model_supports_embeddings(
+				provider_key,
+				model_name
+			)
+		)
 	return false
+
+
+func populate_embedding_selector(
+	_ignored_a: Variant = null,
+	_ignored_b: Variant = null
+) -> void:
+	if not is_instance_valid(_embedding_model_selector):
+		return
+	if not is_instance_valid(_ai_model_manager):
+		_embedding_model_selector.clear()
+		_embedding_model_selector.add_item("Local TF-IDF (default)")
+		_embedding_model_selector.set_item_metadata(0, {"provider": "", "model": ""})
+		_update_pull_button_visibility()
+		return
+
+	var options: Array = []
+	if _ai_model_manager.has_method("get_available_embedding_models"):
+		options = _ai_model_manager.get_available_embedding_models()
+
+	var current_model: String = ""
+	var current_provider: String = ""
+	if _ai_model_manager.has_method("get_current_embedding_model"):
+		current_model = String(_ai_model_manager.get_current_embedding_model())
+	if _ai_model_manager.has_method("get_current_embedding_provider"):
+		current_provider = String(
+			_ai_model_manager.get_current_embedding_provider()
+		)
+
+	var was_connected: bool = (
+		_embedding_model_selector.item_selected.is_connected(
+			on_embedding_model_selected
+		)
+	)
+	if was_connected:
+		_embedding_model_selector.item_selected.disconnect(
+			on_embedding_model_selected
+		)
+
+	_embedding_model_selector.clear()
+	_embedding_model_selector.add_item("Local TF-IDF (default)")
+	_embedding_model_selector.set_item_metadata(
+		0,
+		{"provider": "", "model": ""}
+	)
+	_embedding_model_selector.set_item_tooltip(
+		0,
+		"No model embeddings — SynAxes uses local themes (TF-IDF)."
+	)
+
+	var selected_index: int = 0
+	for option_any: Variant in options:
+		if typeof(option_any) != TYPE_DICTIONARY:
+			continue
+		var option: Dictionary = option_any
+		var provider_key: String = String(option.get("provider", ""))
+		var model_id: String = String(option.get("model", ""))
+		var label_text: String = String(option.get("label", model_id))
+		var provider_prefix: String = provider_key.capitalize()
+		var display_text: String = "%s · %s" % [provider_prefix, label_text]
+		_embedding_model_selector.add_item(display_text)
+		var item_index: int = _embedding_model_selector.item_count - 1
+		_embedding_model_selector.set_item_metadata(item_index, {
+			"provider": provider_key,
+			"model": model_id,
+			"installed": bool(option.get("installed", false)),
+			"pull_hint": String(option.get("pull_hint", "")),
+		})
+		var tooltip_parts: Array[String] = [display_text]
+		if not bool(option.get("installed", true)):
+			tooltip_parts.append(
+				"Not installed. Run: %s" % String(option.get("pull_hint", ""))
+			)
+		_embedding_model_selector.set_item_tooltip(
+			item_index,
+			"\n".join(tooltip_parts)
+		)
+		if (
+			provider_key == current_provider
+			and model_id.get_slice(":", 0).to_lower()
+			== current_model.get_slice(":", 0).to_lower()
+		):
+			selected_index = item_index
+
+	_embedding_model_selector.select(selected_index)
+	if was_connected:
+		_embedding_model_selector.item_selected.connect(
+			on_embedding_model_selected
+		)
+	_update_pull_button_visibility()
+
+
+func on_embedding_model_selected(index: int) -> void:
+	if (
+		not is_instance_valid(_embedding_model_selector)
+		or not is_instance_valid(_ai_model_manager)
+	):
+		return
+	var meta_any: Variant = _embedding_model_selector.get_item_metadata(index)
+	if typeof(meta_any) != TYPE_DICTIONARY:
+		return
+	var meta: Dictionary = meta_any
+	var provider_key: String = String(meta.get("provider", ""))
+	var model_id: String = String(meta.get("model", ""))
+	if not _ai_model_manager.has_method("set_current_embedding_model"):
+		return
+	var result: Dictionary = _ai_model_manager.set_current_embedding_model(
+		provider_key,
+		model_id
+	)
+	if not bool(result.get("success", false)):
+		if _show_error_cb.is_valid():
+			_show_error_cb.call(
+				"Embedding Model",
+				str(result.get("error", "Could not select embedding model."))
+			)
+		populate_embedding_selector()
+		return
+	_update_pull_button_visibility()
+	if (
+		provider_key == "ollama"
+		and not bool(meta.get("installed", true))
+		and _show_error_cb.is_valid()
+	):
+		var pull_hint: String = String(meta.get("pull_hint", ""))
+		if pull_hint.is_empty() and _ai_model_manager.has_method("get_embedding_pull_hint"):
+			pull_hint = String(
+				_ai_model_manager.get_embedding_pull_hint(model_id)
+			)
+		_show_error_cb.call(
+			"Embedding model not installed",
+			"'%s' is selected but not installed yet.\n\nRun `%s` in a terminal, or click Pull."
+			% [model_id, pull_hint]
+		)
+
+
+func on_pull_embedding_model() -> void:
+	if (
+		not is_instance_valid(_embedding_model_selector)
+		or not is_instance_valid(_ai_model_manager)
+		or not _ai_model_manager.has_method("pull_ollama_embedding_model")
+	):
+		return
+	var index: int = int(_embedding_model_selector.selected)
+	if index < 0:
+		return
+	var meta_any: Variant = _embedding_model_selector.get_item_metadata(index)
+	if typeof(meta_any) != TYPE_DICTIONARY:
+		return
+	var meta: Dictionary = meta_any
+	if String(meta.get("provider", "")) != "ollama":
+		return
+	var model_id: String = String(meta.get("model", "")).strip_edges()
+	if model_id.is_empty():
+		return
+	if is_instance_valid(_pull_embedding_model_button):
+		_pull_embedding_model_button.disabled = true
+		_pull_embedding_model_button.text = "…"
+	if is_instance_valid(_ollama_status_label):
+		_ollama_status_label.text = "Pulling %s via Ollama…" % model_id
+	var result: Dictionary = await _ai_model_manager.pull_ollama_embedding_model(
+		model_id
+	)
+	if is_instance_valid(_pull_embedding_model_button):
+		_pull_embedding_model_button.disabled = false
+		_pull_embedding_model_button.text = "Pull"
+	if not bool(result.get("success", false)):
+		if _show_error_cb.is_valid():
+			_show_error_cb.call(
+				"Ollama pull failed",
+				"Could not pull '%s': %s\n\nOr run: %s"
+				% [
+					model_id,
+					str(result.get("error", "unknown")),
+					(
+						_ai_model_manager.get_embedding_pull_hint(model_id)
+						if _ai_model_manager.has_method("get_embedding_pull_hint")
+						else ("ollama pull %s" % model_id)
+					),
+				]
+			)
+		_update_pull_button_visibility()
+		return
+	populate_embedding_selector()
+
+
+func _update_pull_button_visibility() -> void:
+	if not is_instance_valid(_pull_embedding_model_button):
+		return
+	var should_show: bool = false
+	if is_instance_valid(_embedding_model_selector):
+		var index: int = int(_embedding_model_selector.selected)
+		if index >= 0 and index < _embedding_model_selector.item_count:
+			var meta_any: Variant = _embedding_model_selector.get_item_metadata(
+				index
+			)
+			if typeof(meta_any) == TYPE_DICTIONARY:
+				var meta: Dictionary = meta_any
+				should_show = (
+					String(meta.get("provider", "")) == "ollama"
+					and not bool(meta.get("installed", true))
+					and not String(meta.get("model", "")).is_empty()
+				)
+	_pull_embedding_model_button.visible = should_show

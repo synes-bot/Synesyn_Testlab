@@ -14,8 +14,9 @@ why it is built that way.
 
 ## [Unreleased]
 
-Everything below is in `main` and unreleased; it becomes **0.1.0** when the
-repository is published and tagged.
+## [0.1.0]
+
+First public release of the Synesyn platform.
 
 ### Added
 

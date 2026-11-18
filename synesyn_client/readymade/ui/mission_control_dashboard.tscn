@@ -1,4 +1,4 @@
-[gd_scene load_steps=7 format=3 uid="uid://dixs1d8etv3c4"]
+[gd_scene load_steps=9 format=3 uid="uid://dixs1d8etv3c4"]
 
 [ext_resource type="Script" uid="uid://ggbgw06ceijw" path="res://readymade/ui/mission_control_dashboard.gd" id="1_x3k9l"]
 [ext_resource type="Texture2D" uid="uid://c31egjr0npbum" path="res://readymade/readymade_icons/readymade_logo_h_128.png" id="2_7idtd"]
@@ -6,6 +6,8 @@
 [ext_resource type="PackedScene" uid="uid://c6g7wqdsw5t1m" path="res://readymade/ui/content_viewer.tscn" id="3_content_viewer"]
 [ext_resource type="PackedScene" uid="uid://cwhwtkglc1v7c" path="res://readymade/ui/scratchpad.tscn" id="4_scratchpad"]
 [ext_resource type="PackedScene" uid="uid://df7wmtw5l7m3q" path="res://readymade/ui/brainstorming_tab.tscn" id="5_brainstorming"]
+[ext_resource type="PackedScene" path="res://readymade/ui/campaign_dashboard.tscn" id="6_campaign"]
+[ext_resource type="PackedScene" path="res://readymade/ui/stage_board_view.tscn" id="7_stage_board"]
 
 [node name="MissionControlDashboard" type="Control"]
 layout_mode = 3
@@ -36,13 +38,15 @@ split_offset = 280
 dragger_visibility = 1
 
 [node name="LeftPanelContainer" type="PanelContainer" parent="HSplitContainer"]
-custom_minimum_size = Vector2(260, 0)
+clip_contents = true
+custom_minimum_size = Vector2(280, 0)
 layout_mode = 2
 size_flags_horizontal = 0
 size_flags_stretch_ratio = 0.0
 theme = ExtResource("2_abcde")
 
 [node name="MarginContainer" type="MarginContainer" parent="HSplitContainer/LeftPanelContainer"]
+clip_contents = true
 layout_mode = 2
 theme_override_constants/margin_left = 10
 theme_override_constants/margin_top = 5
@@ -50,6 +54,7 @@ theme_override_constants/margin_right = 10
 theme_override_constants/margin_bottom = 10
 
 [node name="LeftColumnVBox" type="VBoxContainer" parent="HSplitContainer/LeftPanelContainer/MarginContainer"]
+clip_contents = true
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -85,6 +90,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 tooltip_text = "Select your current work focus"
 clip_text = true
+text_overrun_behavior = 3
 
 [node name="HSeparator_Mode" type="HSeparator" parent="HSplitContainer/LeftPanelContainer/MarginContainer/LeftColumnVBox"]
 layout_mode = 2
@@ -100,6 +106,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 tooltip_text = "Select your current workflow"
 clip_text = true
+text_overrun_behavior = 3
 
 [node name="HSeparator_Workflow" type="HSeparator" parent="HSplitContainer/LeftPanelContainer/MarginContainer/LeftColumnVBox"]
 layout_mode = 2
@@ -119,6 +126,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 tooltip_text = "Select active workplan"
 clip_text = true
+text_overrun_behavior = 3
 
 [node name="WorkplanManagerButton" type="Button" parent="HSplitContainer/LeftPanelContainer/MarginContainer/LeftColumnVBox/CoreActionsContainer"]
 layout_mode = 2
@@ -401,8 +409,11 @@ theme_type_variation = &"HeaderMedium"
 text = "📋 ACTIVE TASKS"
 horizontal_alignment = 1
 
-[node name="FilterSearchContainer" type="HBoxContainer" parent="HSplitContainer/MainTabContainer/Tasks/TasksMarginContainer/TasksVBoxContainer/TasksHeaderContainer"]
+[node name="FilterSearchContainer" type="HFlowContainer" parent="HSplitContainer/MainTabContainer/Tasks/TasksMarginContainer/TasksVBoxContainer/TasksHeaderContainer"]
 layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 6
 
 [node name="SelectAllButton" type="Button" parent="HSplitContainer/MainTabContainer/Tasks/TasksMarginContainer/TasksVBoxContainer/TasksHeaderContainer/FilterSearchContainer"]
 layout_mode = 2
@@ -410,24 +421,35 @@ tooltip_text = "Toggle between selecting all and deselecting all visible tasks"
 text = "☑️ Select All"
 
 [node name="SearchEdit" type="LineEdit" parent="HSplitContainer/MainTabContainer/Tasks/TasksMarginContainer/TasksVBoxContainer/TasksHeaderContainer/FilterSearchContainer"]
+custom_minimum_size = Vector2(160, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 placeholder_text = "🔍 Search tasks..."
 
 [node name="StatusFilter" type="OptionButton" parent="HSplitContainer/MainTabContainer/Tasks/TasksMarginContainer/TasksVBoxContainer/TasksHeaderContainer/FilterSearchContainer"]
+custom_minimum_size = Vector2(120, 0)
 layout_mode = 2
-size_flags_horizontal = 3
 clip_text = true
+text_overrun_behavior = 3
 
 [node name="PriorityFilter" type="OptionButton" parent="HSplitContainer/MainTabContainer/Tasks/TasksMarginContainer/TasksVBoxContainer/TasksHeaderContainer/FilterSearchContainer"]
+custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
-size_flags_horizontal = 3
 clip_text = true
+text_overrun_behavior = 3
+
+[node name="AssigneeFilter" type="OptionButton" parent="HSplitContainer/MainTabContainer/Tasks/TasksMarginContainer/TasksVBoxContainer/TasksHeaderContainer/FilterSearchContainer"]
+custom_minimum_size = Vector2(160, 0)
+layout_mode = 2
+tooltip_text = "Filter by assignee"
+clip_text = true
+text_overrun_behavior = 3
 
 [node name="SortOption" type="OptionButton" parent="HSplitContainer/MainTabContainer/Tasks/TasksMarginContainer/TasksVBoxContainer/TasksHeaderContainer/FilterSearchContainer"]
+custom_minimum_size = Vector2(140, 0)
 layout_mode = 2
-size_flags_horizontal = 3
 clip_text = true
+text_overrun_behavior = 3
 
 [node name="RefreshButton" type="Button" parent="HSplitContainer/MainTabContainer/Tasks/TasksMarginContainer/TasksVBoxContainer/TasksHeaderContainer/FilterSearchContainer"]
 layout_mode = 2
@@ -468,6 +490,7 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 
 [node name="Calendar" type="VBoxContainer" parent="HSplitContainer/MainTabContainer"]
+clip_contents = true
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -530,10 +553,11 @@ text = "📅 Today"
 layout_mode = 2
 
 [node name="CalendarScrollContainer" type="ScrollContainer" parent="HSplitContainer/MainTabContainer/Calendar/CalendarMarginContainer/CalendarVBoxContainer"]
+clip_contents = true
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-horizontal_scroll_mode = 0
+horizontal_scroll_mode = 1
 vertical_scroll_mode = 0
 
 [node name="CalendarGrid" type="GridContainer" parent="HSplitContainer/MainTabContainer/Calendar/CalendarMarginContainer/CalendarVBoxContainer/CalendarScrollContainer"]
@@ -544,6 +568,52 @@ theme_override_constants/h_separation = 4
 theme_override_constants/v_separation = 4
 columns = 7
 
+[node name="Campaigns" type="MarginContainer" parent="HSplitContainer/MainTabContainer"]
+visible = false
+clip_contents = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+metadata/_tab_name = "Campaigns"
+metadata/_tab_index = 3
+
+[node name="CampaignsMargin" type="MarginContainer" parent="HSplitContainer/MainTabContainer/Campaigns"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="CampaignDashboard" parent="HSplitContainer/MainTabContainer/Campaigns/CampaignsMargin" instance=ExtResource("6_campaign")]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="Board" type="MarginContainer" parent="HSplitContainer/MainTabContainer"]
+visible = false
+clip_contents = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+metadata/_tab_name = "Board"
+metadata/_tab_index = 4
+
+[node name="BoardMargin" type="MarginContainer" parent="HSplitContainer/MainTabContainer/Board"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="StageBoardView" parent="HSplitContainer/MainTabContainer/Board/BoardMargin" instance=ExtResource("7_stage_board")]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
 [node name="Scratchpad" type="MarginContainer" parent="HSplitContainer/MainTabContainer"]
 visible = false
 clip_contents = true
@@ -551,7 +621,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 metadata/_tab_name = "Scratchpad"
-metadata/_tab_index = 3
+metadata/_tab_index = 5
 
 [node name="Scratchpad_tab" parent="HSplitContainer/MainTabContainer/Scratchpad" instance=ExtResource("4_scratchpad")]
 layout_mode = 2
@@ -564,7 +634,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 metadata/_tab_name = "About"
-metadata/_tab_index = 4
+metadata/_tab_index = 6
 
 [node name="AboutScrollContainer" type="ScrollContainer" parent="HSplitContainer/MainTabContainer/About"]
 layout_mode = 2

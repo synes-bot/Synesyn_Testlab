@@ -4,7 +4,7 @@ title: SynAxes navigable default path (latent reality → holds)
 status: review
 version: "0.2"
 owner: SynAxes / product
-last_reviewed: 2026-08-07
+last_reviewed: 2026-11-15
 primary_users: ["facilitator", "curator", "researcher", "godot_developer"]
 supersedes: null
 ---
@@ -184,9 +184,11 @@ merely degrade — they fail to load.
   suffice — an optional `overrides: Dictionary` on `commit_closure`, a
   `select_candidate(idx)` that does not depend on an ItemList selection, and a
   candidates accessor.
-- **REQ-NDP-025:** Delete `addons/metapunkt/scripts/interfaces/synaxes_interface.gd`.
-  It has zero references; `synesyn_client/addons/metapunkt/Integrations/SynaxesInterface.gd` is the copy preloaded
-  and registered in `ToolRegistry.gd`. Do this first so nobody edits the dead one.
+- **REQ-NDP-025:** Delete the dead Metapunkt SynAxes interface duplicate under
+  `synesyn_client/addons/metapunkt/scripts/interfaces/` (legacy orchestrator
+  shim). The live copy preloaded and registered in `ToolRegistry.gd` is
+  `synesyn_client/addons/metapunkt/Integrations/SynaxesInterface.gd`. Do this
+  first so nobody edits the dead one.
 - **REQ-NDP-016:** One ScenSyn or Workshop Catalyst entry point that proposes
   themes from current/last session data. In this phase it opens SynAxes with
   session data preloaded and discovery queued — it does **not** attempt headless
@@ -379,9 +381,9 @@ it true.
 
 **Files**
 
-- `addons/metapunkt/Integrations/SynaxesInterface.gd` (the live copy)
-- Delete `addons/metapunkt/scripts/interfaces/synaxes_interface.gd` (unreferenced)
-- `addons/synaxes/scripts/runtime/synaxes_closure_controller.gd` — headless args
+- `synesyn_client/addons/metapunkt/Integrations/SynaxesInterface.gd` (the live copy)
+- Delete the unreferenced legacy shim under `synesyn_client/addons/metapunkt/scripts/interfaces/`
+- `synesyn_client/addons/synaxes/scripts/runtime/synaxes_closure_controller.gd` — headless args
 - Minimal Workshop or ScenSyn caller (prefer smallest existing facilitator action
   surface)
 
@@ -463,8 +465,10 @@ discovery, and F when an application needs candidates without the dock.
 - [x] REQ-NDP-011 Tools copy
 - [x] REQ-NDP-012 User-guide one-pager + facilitator workflow
 - [x] REQ-NDP-013 README audience split + drop-in story
-- [x] REQ-NDP-025 Delete dead Metapunkt interface duplicate
+- [x] REQ-NDP-025 Delete dead Metapunkt interface duplicate (legacy shim removed; live copy `synesyn_client/addons/metapunkt/Integrations/SynaxesInterface.gd`)
 - [x] REQ-NDP-015 Metapunkt API extensions (headless commit args)
 - [x] REQ-NDP-016 App entry propose-themes slice (dock-preloaded)
 - [x] REQ-NDP-017 Reload last analysis
 - [x] REQ-NDP-024 Headless discovery (Phase F)
+
+**Status vs tracker:** Phases 0–F requirements above are implemented (see `05_SynAxes.md` §I). This PRD remains `review` for product sign-off. Orientation live-Hub manual QA belongs to `PRD-SYNAXES-CLOSURE-MAP-ORIENTATION.md`, not this default-path plan.

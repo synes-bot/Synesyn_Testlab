@@ -215,7 +215,7 @@ static func get_packs_dir() -> String:
 
 static func get_workplans_dir() -> String:
 	## ReadyMade workplans live under the ReadyMade app folder (not synesyn/).
-	migrate_readymade_storage_if_needed()
+	## Pure path helper — does not migrate or write. Call run_storage_migrations() at startup.
 	return get_readymade_data_dir().path_join("workplans") + "/"
 
 
@@ -242,9 +242,10 @@ static func get_syntree_resources_path() -> String:
 ## Documents/Synesyn/readymade/ — ReadyMade app data (mirrors ScenSyn's scensyn/ layout).
 ## Not under synesyn/readymade/; that nested path is legacy and migrated once.
 static var _readymade_storage_migrated: bool = false
+static var _storage_migrations_ran: bool = false
 
 static func get_readymade_data_dir() -> String:
-	migrate_readymade_storage_if_needed()
+	## Pure path helper — does not migrate or write. Call run_storage_migrations() at startup.
 	var base: String = get_storage_root_dir()
 	if base.strip_edges().is_empty():
 		return ProjectSettings.globalize_path("user://readymade/")
@@ -272,6 +273,16 @@ static func get_legacy_workplans_dir() -> String:
 ## Test/harness helper: allow migration to run again after isolating storage.
 static func reset_readymade_migration_guard_for_tests() -> void:
 	_readymade_storage_migrated = false
+	_storage_migrations_ran = false
+
+
+## Explicit, idempotent startup entry for all Documents/Synesyn storage migrations.
+## Call once from WorkplanManager (or equivalent) — never from pure path getters.
+static func run_storage_migrations() -> void:
+	if _storage_migrations_ran:
+		return
+	_storage_migrations_ran = true
+	migrate_readymade_storage_if_needed()
 
 
 ## One-time copy of nested synesyn/readymade/ (and synesyn/workplans/) into the
@@ -435,6 +446,10 @@ static func default_config() -> Dictionary:
 			# - <app_root>/services/synesyn_hub/synesyn_hub.exe
 			# - <app_root>/../services/synesyn_hub/synesyn_hub.exe
 			"exec_path": "",
+			# Editor/source runs only (never exported builds). When the hub binary is
+			# absent, start `python -m app.main` from services/synesyn_hub. Default off
+			# so a generic checkout does not spawn Python unless the operator opts in.
+			"autostart_from_source": false,
 			# Optional hub auth (shared across apps).
 			# When enabled, clients send: Authorization: Bearer <token>
 			"auth": {
@@ -502,6 +517,12 @@ static func default_config() -> Dictionary:
 				# hamburger menu, SynTree panel, etc.). Restored on startup so the
 				# choice survives project reloads; empty string means "auto-select".
 				"selected_model": "",
+				# Dedicated embedding model for SynAxes Model themes and other
+				# Tier-3 embedding callers. Independent of selected_model (chat).
+				# Empty string → no model embeddings; callers fall back to local TF-IDF.
+				"selected_embedding_model": "",
+				# Provider id for selected_embedding_model ("ollama" | "openai" | …).
+				"selected_embedding_provider": "",
 				# Optional substrate persistence for "important outputs" (metaprompts/analyses).
 				# When enabled, SynTree will best-effort persist prompt/summary/metrics artifacts to the Hub substrate.
 				# Keep false by default to avoid surprising storage/volume and to preserve privacy-by-default.

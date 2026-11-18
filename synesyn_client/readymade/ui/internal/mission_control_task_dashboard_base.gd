@@ -1,6 +1,10 @@
 extends "res://readymade/ui/internal/mission_control_dashboard_base.gd"
 class_name MissionControlTaskDashboardBase
 
+var _main_external_tab_bar: TabBar = null
+## Single hub/backend notice dialog — replaced rather than stacked (dismissible).
+var _active_notice_dialog: AcceptDialog = null
+
 func _ready() -> void:
 	# Add to group for easy debugging
 	add_to_group("mission_control")
@@ -92,36 +96,118 @@ func _connect_to_orchestrator():
 		_connect_to_orchestrator()
 
 func _ensure_main_tab_hit_targets() -> void:
-	"""Enlarge MainTabContainer tab hit areas so clicks work reliably at 1152x648."""
+	"""Back-compat alias — structural tab setup (no z_index overlap hacks)."""
+	_setup_main_tabs_structural()
+
+
+func _setup_main_tabs_structural() -> void:
+	"""Place a dedicated TabBar above the TabContainer so page panels cannot cover tabs.
+
+	Hides the TabContainer's internal tab strip (tabs_visible=false) and syncs an
+	external TabBar in a VBox sibling column. Avoids brittle z_index / mouse_filter
+	layering that broke under layout changes.
+	"""
 	if main_tab_container == null:
 		return
-	main_tab_container.clip_tabs = false
-	# Godot 4 TabContainer.tab_alignment uses TabBar alignment ints (0=left).
-	main_tab_container.tab_alignment = 0
-	main_tab_container.add_theme_font_size_override("font_size", 15)
-	var tab_bar: TabBar = main_tab_container.get_tab_bar()
-	if tab_bar == null:
+	if _main_external_tab_bar != null and is_instance_valid(_main_external_tab_bar):
+		_sync_external_tab_bar_titles()
 		return
-	# Root cause of missed clicks: page content can stack above the TabBar for
-	# hit-testing. Keep the bar on top, STOP mouse filter, and enlarge tab rects.
-	tab_bar.mouse_filter = Control.MOUSE_FILTER_STOP
-	# TabBar is an internal child of TabContainer — do not move_child it.
-	tab_bar.z_as_relative = false
-	tab_bar.z_index = 100
-	tab_bar.custom_minimum_size = Vector2(0, 44)
-	tab_bar.add_theme_constant_override("h_separation", 12)
-	tab_bar.add_theme_constant_override("tab_minimum_width", 88)
-	# Page panels must not steal clicks in the tab strip region.
-	for child_any in main_tab_container.get_children():
-		if child_any is Control:
-			var page: Control = child_any
-			# Ensure pages stay below the tab strip for input.
-			page.z_index = mini(page.z_index, 0)
+	if bool(main_tab_container.get_meta("structural_tabs_ready", false)):
+		var existing: Variant = main_tab_container.get_meta("external_tab_bar", null)
+		if existing is TabBar:
+			_main_external_tab_bar = existing
+			_sync_external_tab_bar_titles()
+			return
+
+	var parent_node: Node = main_tab_container.get_parent()
+	if parent_node == null:
+		return
+
+	var wrapper := VBoxContainer.new()
+	wrapper.name = "MainTabsColumn"
+	wrapper.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	wrapper.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	wrapper.add_theme_constant_override("separation", 0)
+
+	var insert_index: int = main_tab_container.get_index()
+	parent_node.add_child(wrapper)
+	parent_node.move_child(wrapper, insert_index)
+
+	var external_bar := TabBar.new()
+	external_bar.name = "MainTabBar"
+	external_bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	# Clip + scroll arrows when the window is narrower than all tab titles.
+	external_bar.clip_tabs = true
+	external_bar.tab_alignment = 0
+	external_bar.custom_minimum_size = Vector2(0, 44)
+	external_bar.add_theme_font_size_override("font_size", 15)
+	external_bar.add_theme_constant_override("h_separation", 12)
+	external_bar.add_theme_constant_override("tab_minimum_width", 72)
+	external_bar.mouse_filter = Control.MOUSE_FILTER_STOP
+
+	parent_node.remove_child(main_tab_container)
+	wrapper.add_child(external_bar)
+	wrapper.add_child(main_tab_container)
+
+	main_tab_container.tabs_visible = false
+	main_tab_container.clip_tabs = false
+	main_tab_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	main_tab_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
+
+	_main_external_tab_bar = external_bar
+	main_tab_container.set_meta("structural_tabs_ready", true)
+	main_tab_container.set_meta("external_tab_bar", external_bar)
+	_sync_external_tab_bar_titles()
+	external_bar.current_tab = main_tab_container.current_tab
+
+	if not external_bar.tab_changed.is_connected(_on_external_main_tab_changed):
+		external_bar.tab_changed.connect(_on_external_main_tab_changed)
+	if not main_tab_container.tab_changed.is_connected(_on_internal_main_tab_changed):
+		main_tab_container.tab_changed.connect(_on_internal_main_tab_changed)
+
+
+func _sync_external_tab_bar_titles() -> void:
+	if _main_external_tab_bar == null or main_tab_container == null:
+		return
+	while _main_external_tab_bar.get_tab_count() > 0:
+		_main_external_tab_bar.remove_tab(0)
 	for tab_index in main_tab_container.get_tab_count():
-		# Keep titles short enough to remain fully clickable without overlapping neighbors.
-		var title: String = main_tab_container.get_tab_title(tab_index)
-		if title.length() > 0:
-			main_tab_container.set_tab_title(tab_index, title)
+		_main_external_tab_bar.add_tab(main_tab_container.get_tab_title(tab_index))
+
+
+func _on_external_main_tab_changed(tab_index: int) -> void:
+	if main_tab_container and main_tab_container.current_tab != tab_index:
+		main_tab_container.current_tab = tab_index
+
+
+func _on_internal_main_tab_changed(tab_index: int) -> void:
+	if _main_external_tab_bar and _main_external_tab_bar.current_tab != tab_index:
+		_main_external_tab_bar.current_tab = tab_index
+	_ensure_left_sidebar_split()
+
+
+func _ensure_left_sidebar_split() -> void:
+	"""Keep the left sidebar at least 280px so Calendar min-width cannot clip Work Mode."""
+	var split: HSplitContainer = get_node_or_null("HSplitContainer") as HSplitContainer
+	if split == null:
+		return
+	const LEFT_MIN: int = 280
+	if split.split_offset < LEFT_MIN:
+		split.split_offset = LEFT_MIN
+	var left_panel: Control = split.get_child(0) as Control if split.get_child_count() > 0 else null
+	if left_panel != null and left_panel.custom_minimum_size.x < float(LEFT_MIN):
+		left_panel.custom_minimum_size.x = float(LEFT_MIN)
+
+
+func _get_main_tab_bar_for_input() -> TabBar:
+	if _main_external_tab_bar != null and is_instance_valid(_main_external_tab_bar):
+		return _main_external_tab_bar
+	if main_tab_container:
+		var meta_bar: Variant = main_tab_container.get_meta("external_tab_bar", null)
+		if meta_bar is TabBar:
+			return meta_bar
+		return main_tab_container.get_tab_bar()
+	return null
 
 
 func simulate_main_tab_center_click(tab_index: int) -> bool:
@@ -130,8 +216,8 @@ func simulate_main_tab_center_click(tab_index: int) -> bool:
 		return false
 	if tab_index < 0 or tab_index >= main_tab_container.get_tab_count():
 		return false
-	_ensure_main_tab_hit_targets()
-	var tab_bar: TabBar = main_tab_container.get_tab_bar()
+	_setup_main_tabs_structural()
+	var tab_bar: TabBar = _get_main_tab_bar_for_input()
 	if tab_bar == null:
 		return false
 	# Force layout so get_tab_rect reflects the on-screen chrome.
@@ -143,18 +229,21 @@ func simulate_main_tab_center_click(tab_index: int) -> bool:
 		main_tab_container.current_tab = tab_index
 		return main_tab_container.current_tab == tab_index
 	var local_center: Vector2 = tab_rect.position + (tab_rect.size * 0.5)
-	var global_center: Vector2 = tab_bar.global_position + local_center
+	# Project uses window/stretch/mode=canvas_items — map canvas → window coords
+	# so clicks still hit after resize (e.g. 1152x648 → 1920x1080).
+	var canvas_point: Vector2 = tab_bar.global_position + local_center
+	var click_pos: Vector2 = get_viewport().get_final_transform() * canvas_point
 	var press := InputEventMouseButton.new()
 	press.button_index = MOUSE_BUTTON_LEFT
 	press.pressed = true
-	press.position = global_center
-	press.global_position = global_center
+	press.position = click_pos
+	press.global_position = click_pos
 	get_viewport().push_input(press)
 	var release := InputEventMouseButton.new()
 	release.button_index = MOUSE_BUTTON_LEFT
 	release.pressed = false
-	release.position = global_center
-	release.global_position = global_center
+	release.position = click_pos
+	release.global_position = click_pos
 	get_viewport().push_input(release)
 	await get_tree().process_frame
 	return main_tab_container.current_tab == tab_index
@@ -259,7 +348,7 @@ func _update_draft_action_buttons() -> void:
 
 
 func _setup_ui():
-	_ensure_main_tab_hit_targets()
+	_setup_main_tabs_structural()
 	_update_draft_action_buttons()
 	# Create task dialog
 	task_dialog = preload("res://readymade/ui/task_dialog.tscn").instantiate()
@@ -271,9 +360,9 @@ func _setup_ui():
 		task_dialog.task_updated.connect(_on_task_saved)
 	
 	# Create and setup the calendar context menu
-	calendar_context_menu = PopupMenu.new()
-	add_child(calendar_context_menu)
-	calendar_context_menu.id_pressed.connect(_on_calendar_context_menu_id_pressed)
+	# Calendar context menu is created fresh on each right-click (_ensure_calendar_context_menu)
+	# so a stuck-open PopupMenu after Undo cannot survive a calendar rebuild.
+	calendar_context_menu = null
 	
 	# Create the day overflow popup
 	day_overflow_popup = PopupPanel.new()
@@ -337,6 +426,8 @@ func _setup_connections():
 	search_edit.text_changed.connect(_on_search_text_changed)
 	status_filter.item_selected.connect(_on_status_filter_changed)
 	priority_filter.item_selected.connect(_on_priority_filter_changed)
+	if assignee_filter:
+		assignee_filter.item_selected.connect(_on_assignee_filter_changed)
 	sort_option.item_selected.connect(_on_sort_option_changed)
 	
 	# Calendar connections
@@ -366,8 +457,12 @@ func _on_workplan_loaded():
 	_setup_calendar()
 	_update_calendar()
 	
-	# Load completed tasks into content viewer
-	var content_viewer_node = $HSplitContainer/MainTabContainer/ContentViewer/ContentMarginContainer/ContentViewer_tab
+	# Load completed tasks into content viewer.
+	# Use the @onready ref — structural tabs reparent MainTabContainer under
+	# MainTabsColumn, so a late $HSplitContainer/MainTabContainer/... lookup fails.
+	var content_viewer_node: Control = content_viewer
+	if content_viewer_node == null:
+		content_viewer_node = find_child("ContentViewer_tab", true, false) as Control
 	print("MissionControl: Content viewer node found: ", content_viewer_node != null)
 	if content_viewer_node and content_viewer_node.has_method("load_completed_tasks"):
 		var all_tasks = workplan_obj.get_all_tasks()
@@ -382,6 +477,7 @@ func _on_workplan_loaded():
 		print("MissionControl: Loaded ", tasks_with_content.size(), " tasks with content into content viewer")
 	else:
 		print("MissionControl: ⚠️ Content viewer not found or method missing")
+	_sync_aux_dashboards(workplan_obj)
 
 func _refresh_dashboard():
 	_update_task_list()
@@ -389,6 +485,18 @@ func _refresh_dashboard():
 	_update_draft_action_buttons()
 	# The calendar refresh can be intensive, so maybe call it selectively
 	_update_calendar()
+	var workplan_refresh: Resource = null
+	if ReadyMadeOrchestrator:
+		workplan_refresh = ReadyMadeOrchestrator.workplan
+	_sync_aux_dashboards(workplan_refresh)
+
+func _sync_aux_dashboards(workplan_obj: Resource) -> void:
+	var campaign_node: Node = find_child("CampaignDashboard", true, false)
+	if campaign_node != null and campaign_node.has_method("set_workplan"):
+		campaign_node.set_workplan(workplan_obj)
+	var board_node: Node = find_child("StageBoardView", true, false)
+	if board_node != null and board_node.has_method("set_workplan"):
+		board_node.set_workplan(workplan_obj)
 
 func _update_statistics():
 	"""Update the statistics display"""
@@ -534,18 +642,10 @@ func _create_task_card(task: WorkplanTask) -> Control:
 		file_info.modulate = Color.GREEN
 		vbox.add_child(file_info)
 	
-	# Deadline info
-	if not task.deadline.is_empty():
+	# Deadline info — Done tasks never use red OVERDUE styling.
+	if not task.deadline.is_empty() or task.status == "Done":
 		var deadline_info = Label.new()
-		if task.is_overdue():
-			deadline_info.text = "⚠️ OVERDUE: " + task.deadline
-			deadline_info.modulate = Color.RED
-		elif task.is_due_soon():
-			deadline_info.text = "⏰ Due Soon: " + task.deadline
-			deadline_info.modulate = Color.ORANGE
-		else:
-			deadline_info.text = "📅 Due: " + task.deadline
-			deadline_info.modulate = Color.YELLOW
+		_apply_deadline_label(deadline_info, task)
 		vbox.add_child(deadline_info)
 	
 	# Action buttons
@@ -583,6 +683,12 @@ func _create_task_card(task: WorkplanTask) -> Control:
 			rerun_btn.text = "🔄 Rerun"
 			rerun_btn.pressed.connect(_on_rerun_task_pressed.bind(task))
 			buttons.add_child(rerun_btn)
+
+	var copy_btn = Button.new()
+	copy_btn.text = "📋 Copy as Markdown"
+	copy_btn.tooltip_text = "Copy this task as Markdown to the clipboard"
+	copy_btn.pressed.connect(_on_copy_task_markdown_pressed.bind(task, copy_btn))
+	buttons.add_child(copy_btn)
 	
 	# Delete button
 	var delete_btn = Button.new()
@@ -591,10 +697,61 @@ func _create_task_card(task: WorkplanTask) -> Control:
 	delete_btn.pressed.connect(_on_delete_task_pressed.bind(task))
 	buttons.add_child(delete_btn)
 	
-	# Add the card to the tasks container
-	tasks_container.add_child(card)
+	# Add the card to the tasks container when the Tasks tab is mounted.
+	if tasks_container != null:
+		tasks_container.add_child(card)
 	
 	return card
+
+
+func _on_copy_task_markdown_pressed(task: WorkplanTask, feedback_btn: Button = null) -> void:
+	"""Copy task Markdown and show Copied feedback even if clipboard write fails."""
+	if task == null:
+		return
+	const MarkdownScript = preload("res://readymade/scripts/workplan_task_markdown.gd")
+	var workplan_obj: Resource = null
+	if workplan_manager != null and workplan_manager.has_method("get_current_workplan"):
+		workplan_obj = workplan_manager.get_current_workplan()
+	# Feedback first so a clipboard backend error cannot skip the ✓ Copied UI.
+	var markdown_text: String = MarkdownScript.to_clipboard_markdown(task, workplan_obj)
+	_show_copied_feedback(feedback_btn, "Copied (%d chars)" % markdown_text.length())
+	if not markdown_text.is_empty():
+		DisplayServer.clipboard_set(markdown_text)
+
+
+func _show_copied_feedback(anchor: Control, message: String = "Copied") -> void:
+	"""Brief visible Copied toast; also flips the row button text to ✓ Copied."""
+	if anchor != null and is_instance_valid(anchor) and anchor is Button:
+		var btn: Button = anchor as Button
+		var original: String = btn.text
+		btn.text = "✓ Copied"
+		btn.modulate = Color(0.55, 1.0, 0.65)
+		var tree_local: SceneTree = get_tree()
+		if tree_local != null:
+			tree_local.create_timer(1.2).timeout.connect(func():
+				if is_instance_valid(btn):
+					btn.text = original
+					btn.modulate = Color.WHITE
+			, CONNECT_ONE_SHOT)
+	var toast := Label.new()
+	toast.name = "CopiedMarkdownToast"
+	toast.text = message
+	toast.modulate = Color(0.2, 0.65, 0.35)
+	toast.add_theme_font_size_override("font_size", 13)
+	toast.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	toast.top_level = true
+	add_child(toast)
+	if anchor != null and is_instance_valid(anchor):
+		var rect: Rect2 = anchor.get_global_rect()
+		toast.global_position = Vector2(rect.position.x, rect.position.y - 22.0)
+	else:
+		toast.global_position = Vector2(24, 24)
+	var tree_toast: SceneTree = get_tree()
+	if tree_toast != null:
+		tree_toast.create_timer(1.4).timeout.connect(func():
+			if is_instance_valid(toast):
+				toast.queue_free()
+		, CONNECT_ONE_SHOT)
 
 func _on_add_task_pressed():
 	print("MissionControl: Add new task button pressed")
@@ -616,6 +773,8 @@ func _show_task_template_selector():
 	var dialog = AcceptDialog.new()
 	dialog.title = "Select Task Template"
 	dialog.size = Vector2(500, 400)
+	# Custom Cancel/Custom/Create buttons own the actions — hide AcceptDialog's OK.
+	dialog.dialog_hide_on_ok = false
 	
 	var vbox = VBoxContainer.new()
 	dialog.add_child(vbox)
@@ -662,7 +821,7 @@ func _show_task_template_selector():
 	custom_button.text = "Custom Task"
 	custom_button.pressed.connect(func():
 		await _close_template_selector(dialog)
-		_show_default_task_dialog()
+		await _show_default_task_dialog()
 	)
 	button_container.add_child(custom_button)
 	
@@ -671,12 +830,12 @@ func _show_task_template_selector():
 	create_button.pressed.connect(func():
 		var selected_items = template_list.get_selected_items()
 		if selected_items.is_empty():
-			_show_error_dialog("Please select a template.")
+			await _show_error_dialog("Please select a template.")
 			return
 		
 		var template_id = template_list.get_item_metadata(selected_items[0])
 		await _close_template_selector(dialog)
-		_create_task_from_template(template_id)
+		await _create_task_from_template(template_id)
 	)
 	button_container.add_child(create_button)
 	
@@ -684,45 +843,104 @@ func _show_task_template_selector():
 	template_list.item_activated.connect(func(index: int):
 		var template_id = template_list.get_item_metadata(index)
 		await _close_template_selector(dialog)
-		_create_task_from_template(template_id)
+		await _create_task_from_template(template_id)
 	)
 	
+	# X / Escape must release exclusivity the same way Cancel does.
+	dialog.close_requested.connect(func():
+		await _close_template_selector(dialog)
+	)
+	dialog.canceled.connect(func():
+		await _close_template_selector(dialog)
+	)
+
 	add_child(dialog)
+	var ok_btn: Button = dialog.get_ok_button()
+	if ok_btn != null:
+		ok_btn.visible = false
 	dialog.popup_centered()
 	print("MissionControl: Template selector opened with ", templates.size(), " templates")
 
 
-func _close_template_selector(dialog: Window) -> void:
-	"""Hide and free the template dialog before opening another exclusive Window."""
+func _apply_deadline_label(deadline_info: Label, task: WorkplanTask) -> void:
+	"""Neutral due text for Done; OVERDUE only for incomplete past-due tasks."""
+	# Prefer theme font_color over modulate so parent/theme tints cannot turn Done red.
+	if String(task.status).strip_edges() == "Done":
+		deadline_info.text = "✅ Completed"
+		deadline_info.modulate = Color.WHITE
+		deadline_info.add_theme_color_override("font_color", Color(0.4, 0.4, 0.4))
+		return
+	if task.deadline.is_empty():
+		deadline_info.text = ""
+		return
+	if task.is_overdue():
+		deadline_info.text = "⚠️ OVERDUE: " + task.deadline
+		deadline_info.modulate = Color.WHITE
+		deadline_info.add_theme_color_override("font_color", Color.RED)
+	elif task.is_due_soon():
+		deadline_info.text = "⏰ Due Soon: " + task.deadline
+		deadline_info.modulate = Color.WHITE
+		deadline_info.add_theme_color_override("font_color", Color.ORANGE)
+	else:
+		deadline_info.text = "📅 Due: " + task.deadline
+		deadline_info.modulate = Color.WHITE
+		deadline_info.add_theme_color_override("font_color", Color(0.75, 0.65, 0.1))
+
+
+func _release_exclusive_window(dialog: Window) -> void:
+	"""Drop exclusivity and free a popup so a later AcceptDialog can show."""
 	if dialog == null or not is_instance_valid(dialog):
 		return
-	# Hide first so Godot releases exclusive-child ownership before TaskDialog pops.
-	dialog.hide()
+	dialog.exclusive = false
+	if dialog.visible:
+		dialog.hide()
+	if dialog.get_parent() != null:
+		dialog.get_parent().remove_child(dialog)
 	dialog.queue_free()
 	await get_tree().process_frame
 	await get_tree().process_frame
 
+
+func _dismiss_blocking_dialogs() -> void:
+	"""Close any exclusive Window children (except the persistent task_dialog)."""
+	var blockers: Array[Window] = []
+	for child in get_children():
+		if child is Window and child != task_dialog:
+			var win: Window = child
+			if win.visible or win.exclusive:
+				blockers.append(win)
+	for win in blockers:
+		await _release_exclusive_window(win)
+
+
+func _close_template_selector(dialog: Window) -> void:
+	"""Hide and free the template dialog before opening another exclusive Window."""
+	await _release_exclusive_window(dialog)
+
+
 func _show_default_task_dialog():
 	"""Show the default task creation dialog"""
+	await _dismiss_blocking_dialogs()
 	if task_dialog and is_instance_valid(task_dialog) and task_dialog.has_method("show_add_dialog"):
 		task_dialog.show_add_dialog()
 		print("MissionControl: Opening default task creation dialog")
 	else:
 		print("MissionControl: ⚠️ Task dialog not available or missing show_add_dialog method")
 
-func _create_task_from_template(template_id: String):
+func _create_task_from_template(template_id: String) -> void:
 	"""Create a task from a template and show customization dialog"""
 	if not TaskTemplateManager:
 		return
 	
 	var task = TaskTemplateManager.create_task_from_template(template_id)
 	if not task:
-		_show_error_dialog("Failed to create task from template.")
+		await _show_error_dialog("Failed to create task from template.")
 		return
 	
 	print("MissionControl: Created task from template: ", task.title)
 	
 	# Show task dialog with pre-filled template data for customization
+	await _dismiss_blocking_dialogs()
 	if task_dialog and is_instance_valid(task_dialog) and task_dialog.has_method("show_edit_dialog"):
 		task_dialog.show_edit_dialog(task)
 		print("MissionControl: Opening task customization dialog")
@@ -739,30 +957,80 @@ func _add_task_directly(task: WorkplanTask):
 	print("MissionControl: ✅ Task added directly: ", task.title)
 	_refresh_dashboard()
 
-func _show_error_dialog(message: String):
-	"""Show a simple error dialog"""
-	var dialog = AcceptDialog.new()
-	dialog.dialog_text = message
-	dialog.title = "Error"
-	add_child(dialog)
-	dialog.popup_centered()
-	dialog.confirmed.connect(func(): dialog.queue_free())
+func _clear_active_notice_dialog() -> void:
+	if _active_notice_dialog != null and is_instance_valid(_active_notice_dialog):
+		await _release_exclusive_window(_active_notice_dialog)
+	_active_notice_dialog = null
 
-func _show_info_dialog(message: String):
-	"""Show a simple info dialog"""
+
+func _bind_dismissible_notice(dialog: AcceptDialog) -> void:
+	"""OK, window X, Escape (canceled), and close_requested all free the notice."""
+	var dismiss := func() -> void:
+		if _active_notice_dialog == dialog:
+			_active_notice_dialog = null
+		await _release_exclusive_window(dialog)
+	dialog.confirmed.connect(dismiss)
+	dialog.canceled.connect(dismiss)
+	dialog.close_requested.connect(dismiss)
+	dialog.unresizable = true
+	dialog.wrap_controls = true
+	dialog.transient = true
+	dialog.exclusive = true
+	dialog.dialog_hide_on_ok = true
+
+
+func _show_error_dialog(message: String) -> void:
+	"""Show a dismissible error dialog (Escape / OK / window close). Replaces prior notice."""
+	await _dismiss_blocking_dialogs()
+	await _clear_active_notice_dialog()
 	var dialog = AcceptDialog.new()
-	dialog.dialog_text = message
-	dialog.title = "Information"
+	dialog.title = "Error"
+	dialog.dialog_text = ""
+	var scroll := ScrollContainer.new()
+	scroll.custom_minimum_size = Vector2(520, 240)
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	var body := Label.new()
+	body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	body.custom_minimum_size = Vector2(500, 0)
+	body.text = message
+	scroll.add_child(body)
+	dialog.add_child(scroll)
+	_bind_dismissible_notice(dialog)
+	_active_notice_dialog = dialog
 	add_child(dialog)
-	dialog.popup_centered()
-	dialog.confirmed.connect(func(): dialog.queue_free())
+	dialog.popup_centered(Vector2(560, 360))
+	# Ensure keyboard focus so Escape reaches the dialog.
+	dialog.grab_focus()
+
+func _show_info_dialog(message: String) -> void:
+	"""Show a dismissible info dialog (Escape / OK / window close)."""
+	await _dismiss_blocking_dialogs()
+	await _clear_active_notice_dialog()
+	var dialog = AcceptDialog.new()
+	dialog.title = "Information"
+	dialog.dialog_text = ""
+	var scroll := ScrollContainer.new()
+	scroll.custom_minimum_size = Vector2(480, 180)
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	var body := Label.new()
+	body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	body.custom_minimum_size = Vector2(460, 0)
+	body.text = message
+	scroll.add_child(body)
+	dialog.add_child(scroll)
+	_bind_dismissible_notice(dialog)
+	_active_notice_dialog = dialog
+	add_child(dialog)
+	dialog.popup_centered(Vector2(520, 300))
+	dialog.grab_focus()
 
 func _on_refresh_pressed():
 	_refresh_dashboard()
 
 func _on_backend_unavailable(message: String) -> void:
-	"""Show actionable guidance when hub / LLM is missing."""
-	_show_error_dialog(message)
+	"""Show actionable guidance when hub / LLM is missing; stop drafting so the modal is not sticky."""
+	_on_stop_agent_pressed()
+	await _show_error_dialog(message)
 
 
 func _resolve_readymade_orchestrator() -> Node:
@@ -775,6 +1043,8 @@ func _resolve_readymade_orchestrator() -> Node:
 
 func _on_start_agent_pressed():
 	print("Draft To Do tasks pressed.")
+	# Template / workplan popups are exclusive — clear them so the no-hub dialog can show.
+	await _dismiss_blocking_dialogs()
 	var orchestrator_singleton: Node = _resolve_readymade_orchestrator()
 	if orchestrator_singleton == null:
 		print("MissionControl: ⚠️ ReadyMadeOrchestrator not found on /root")

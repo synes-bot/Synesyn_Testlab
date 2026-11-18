@@ -15,6 +15,7 @@ const WorkplanTaskScript = preload("res://readymade/data/workplan_task.gd")
 @onready var search_edit: LineEdit = $HSplitContainer/MainTabContainer/Tasks/TasksMarginContainer/TasksVBoxContainer/TasksHeaderContainer/FilterSearchContainer/SearchEdit
 @onready var status_filter: OptionButton = $HSplitContainer/MainTabContainer/Tasks/TasksMarginContainer/TasksVBoxContainer/TasksHeaderContainer/FilterSearchContainer/StatusFilter
 @onready var priority_filter: OptionButton = $HSplitContainer/MainTabContainer/Tasks/TasksMarginContainer/TasksVBoxContainer/TasksHeaderContainer/FilterSearchContainer/PriorityFilter
+@onready var assignee_filter: OptionButton = $HSplitContainer/MainTabContainer/Tasks/TasksMarginContainer/TasksVBoxContainer/TasksHeaderContainer/FilterSearchContainer/AssigneeFilter
 @onready var sort_option: OptionButton = $HSplitContainer/MainTabContainer/Tasks/TasksMarginContainer/TasksVBoxContainer/TasksHeaderContainer/FilterSearchContainer/SortOption
 
 # Tab components
@@ -50,6 +51,7 @@ var performance_data: Dictionary = {
 var current_search_text: String = ""
 var current_status_filter: String = "All"
 var current_priority_filter: String = "All"
+var current_assignee_filter: String = "All"
 var current_sort_mode: String = "Priority"
 
 # Calendar state
@@ -60,10 +62,18 @@ var calendar_day_cells: Array[Control] = []
 var calendar_last_task_count: int = -1  # Track task count to avoid unnecessary refreshes
 var max_cards_per_day: int = 4
 var dragging_task: WorkplanTask = null
-var drag_source_date_type: String = ""  # "start" or "deadline"
+var drag_source_date_type: String = ""  # "start" | "deadline" | "publish"
+var _pending_drag_task: WorkplanTask = null
+var _pending_drag_card: Control = null
+var _pending_drag_date_type: String = ""
+var _pending_drag_pos: Vector2 = Vector2.ZERO
+const _CALENDAR_DRAG_THRESHOLD_PX: float = 6.0
 var calendar_view_mode: String = "month"  # month | week | agenda
 var calendar_view_mode_button: OptionButton = null
 var calendar_drag_hint_banner: Control = null
+var calendar_rescheduler = null  # WorkplanCalendarReschedule
+var calendar_cadence_banner: Label = null
+var calendar_series_mode: String = "instance"  # instance | series
 
 var workplan: Dictionary
 var task_card_scene = preload("res://readymade/components/workplan_task_card.tscn")
@@ -277,6 +287,10 @@ func _on_complete_task_pressed(task: WorkplanTask):
 	pass
 func _on_rerun_task_pressed(task: WorkplanTask):
 	pass
+func _on_copy_task_markdown_pressed(task: WorkplanTask, feedback_btn: Button = null):
+	pass
+func _show_copied_feedback(anchor: Control, message: String = "Copied"):
+	pass
 func _on_delete_task_pressed(task: WorkplanTask):
 	pass
 func _setup_task_list_management():
@@ -330,6 +344,8 @@ func _on_search_text_changed(new_text: String):
 func _on_status_filter_changed(index: int):
 	pass
 func _on_priority_filter_changed(index: int):
+	pass
+func _on_assignee_filter_changed(index: int):
 	pass
 func _on_sort_option_changed(index: int):
 	pass
@@ -395,6 +411,12 @@ func _show_task_context_menu(task: WorkplanTask, _date_type: String):
 	pass
 func _on_calendar_context_menu_id_pressed(id: int):
 	pass
+func _dismiss_calendar_context_menu():
+	pass
+func _ensure_calendar_context_menu() -> PopupMenu:
+	return null
+func _run_calendar_context_action(_id: int, _task: WorkplanTask) -> void:
+	pass
 func _get_days_in_month(year: int, month: int) -> int:
 	return 0
 func _parse_date_string(date_string: String) -> Dictionary:
@@ -419,7 +441,12 @@ func _is_valid_date_change(task: WorkplanTask, date_type: String, new_day: int) 
 	return false
 func _get_task_container_from_cell(cell: Control) -> VBoxContainer:
 	return null
-func _create_calendar_task_card(task: WorkplanTask, date_type: String) -> Control:
+func _create_calendar_task_card(
+	task: WorkplanTask,
+	date_type: String,
+	date_types: Array = [],
+	day_number: int = 0
+) -> Control:
 	return null
 func _setup_workplan_ui():
 	pass

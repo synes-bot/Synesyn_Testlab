@@ -3,6 +3,10 @@ extends BaseAIModelLoader
 
 class_name OllamaModelLoader
 
+const EmbeddingModelCatalogScript = preload(
+	"res://addons/syntree/scripts/services/ai/embedding_model_catalog.gd"
+)
+
 # Constants
 # Add common Llama 3 variants and other popular Ollama models
 const AVAILABLE_MODELS = [
@@ -206,7 +210,7 @@ func validate_settings(settings: Dictionary) -> Dictionary:
 	return errors
 
 # ── Embeddings (Tier 3) ───────────────────────────────────────────────────
-# Ollama /api/embed supports batch embedding with any model.
+# Ollama /api/embed posts to a dedicated embedding model id (independent of chat).
 
 func supports_embeddings() -> bool:
 	return true
@@ -215,8 +219,34 @@ func get_embeddings_url(_api_key_to_use: String = "") -> String:
 	# base_url is ".../api/chat", swap to /api/embed
 	return base_url.replace("/api/chat", "/api/embed")
 
-func prepare_embeddings_request(texts: Array) -> Dictionary:
-	return {"model": model_name, "input": texts}
+func prepare_embeddings_request(
+	texts: Array,
+	embedding_model: String = ""
+) -> Dictionary:
+	var embed_model: String = embedding_model.strip_edges()
+	if embed_model.is_empty():
+		embed_model = model_name
+	return {"model": embed_model, "input": texts}
+
+
+## True when discovered /api/show capabilities (or name heuristics) say this
+## installed model can serve /api/embed. Used for the per-model [embed] badge.
+func model_supports_embeddings(requested_model: String = "") -> bool:
+	var resolved_model: String = (
+		requested_model.strip_edges()
+		if not requested_model.is_empty()
+		else model_name
+	)
+	var metadata: Dictionary = get_model_metadata(resolved_model)
+	var capabilities_any: Variant = metadata.get("capabilities", [])
+	var capabilities: Array = (
+		capabilities_any if typeof(capabilities_any) == TYPE_ARRAY else []
+	)
+	return EmbeddingModelCatalogScript.model_supports_embeddings(
+		"ollama",
+		resolved_model,
+		capabilities
+	)
 
 func parse_embeddings_response(response_body: Dictionary) -> Array:
 	# Ollama /api/embed returns {"embeddings": [[...], [...]]}
