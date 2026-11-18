@@ -131,13 +131,31 @@ func unload_model(model_id: String) -> Dictionary:
 	)
 
 
+## Explicit user-triggered pull. Uses stream:false so the call completes with one
+## JSON body. Long timeout — downloads can take minutes on first pull.
+func pull_model(model_id: String) -> Dictionary:
+	var resolved: String = model_id.strip_edges()
+	if resolved.is_empty():
+		return {"success": false, "error": "model_required"}
+	return await _request_json(
+		HTTPClient.METHOD_POST,
+		"/api/pull",
+		{
+			"name": resolved,
+			"stream": false,
+		},
+		600.0
+	)
+
+
 func _request_json(
 	http_method: HTTPClient.Method,
 	path: String,
-	payload: Dictionary = {}
+	payload: Dictionary = {},
+	timeout_seconds: float = CONTROL_TIMEOUT_SECONDS
 ) -> Dictionary:
 	var request_node := HTTPRequest.new()
-	request_node.timeout = CONTROL_TIMEOUT_SECONDS
+	request_node.timeout = timeout_seconds
 	add_child(request_node)
 	var headers := PackedStringArray(["Content-Type: application/json"])
 	var body_text: String = (

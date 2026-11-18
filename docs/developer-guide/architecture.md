@@ -32,6 +32,8 @@ Key artifact types:
 - `ui.syndoc` — editable presentation documents in SynPunkt
 - `json.workflow`, `json.render_request`, `json.render_recipe` — rendering
   workflows and request records
+- `json.lumur_room` — room package registered by an external client (e.g. Lumur)
+  for provenance
 - `image.generated` — generated images with provenance
 
 ## Group sessions (Hub-first)

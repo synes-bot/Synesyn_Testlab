@@ -136,6 +136,7 @@ func _run_test() -> void:
 	var has_status_label: bool = false
 	var has_stop_button: bool = false
 	var has_endpoint_input: bool = false
+	var has_embedding_selector: bool = false
 	for node_index: int in range(scene_state.get_node_count()):
 		var node_id: String = String(
 			scene_state.get_node_name(node_index)
@@ -146,6 +147,8 @@ func _run_test() -> void:
 			has_stop_button = true
 		elif node_id == "OllamaEndpointInput":
 			has_endpoint_input = true
+		elif node_id == "EmbeddingModelSelector":
+			has_embedding_selector = true
 	var did_pass: bool = (
 		models == ["custom:8b"]
 		and endpoint_was_set
@@ -180,9 +183,12 @@ func _run_test() -> void:
 		and syntree_defaults.get("ollama_base_url", "") == (
 			"http://127.0.0.1:11434"
 		)
+		and syntree_defaults.has("selected_embedding_model")
+		and syntree_defaults.has("selected_embedding_provider")
 		and has_status_label
 		and has_stop_button
 		and has_endpoint_input
+		and has_embedding_selector
 	)
 	stream_client.queue_free()
 	message_container_node.queue_free()

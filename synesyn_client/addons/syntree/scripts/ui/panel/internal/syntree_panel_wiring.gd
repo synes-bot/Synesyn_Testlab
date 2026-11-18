@@ -148,6 +148,36 @@ static func connect_manager_signals(panel: Object) -> void:
 					panel._model_settings_controller.populate_model_selector
 				)
 			if (
+				panel._ai_model_manager.has_signal("embedding_models_changed")
+				and not Signal(
+					panel._ai_model_manager,
+					"embedding_models_changed"
+				).is_connected(
+					panel._model_settings_controller.populate_embedding_selector
+				)
+			):
+				Signal(
+					panel._ai_model_manager,
+					"embedding_models_changed"
+				).connect(
+					panel._model_settings_controller.populate_embedding_selector
+				)
+			if (
+				panel._ai_model_manager.has_signal("embedding_model_changed")
+				and not Signal(
+					panel._ai_model_manager,
+					"embedding_model_changed"
+				).is_connected(
+					panel._model_settings_controller.populate_embedding_selector
+				)
+			):
+				Signal(
+					panel._ai_model_manager,
+					"embedding_model_changed"
+				).connect(
+					panel._model_settings_controller.populate_embedding_selector
+				)
+			if (
 				panel._ai_model_manager.has_signal(
 					"provider_status_changed"
 				)
@@ -275,6 +305,26 @@ static func connect_ui_signals(panel: Object) -> void:
 	panel._setup_model_settings_controller()
 	if is_instance_valid(panel.ai_model_selector) and is_instance_valid(panel._model_settings_controller) and not panel.ai_model_selector.item_selected.is_connected(panel._model_settings_controller.on_model_selected):
 		panel.ai_model_selector.item_selected.connect(panel._model_settings_controller.on_model_selected)
+	if (
+		is_instance_valid(panel.embedding_model_selector)
+		and is_instance_valid(panel._model_settings_controller)
+		and not panel.embedding_model_selector.item_selected.is_connected(
+			panel._model_settings_controller.on_embedding_model_selected
+		)
+	):
+		panel.embedding_model_selector.item_selected.connect(
+			panel._model_settings_controller.on_embedding_model_selected
+		)
+	if (
+		is_instance_valid(panel.pull_embedding_model_button)
+		and is_instance_valid(panel._model_settings_controller)
+		and not panel.pull_embedding_model_button.pressed.is_connected(
+			panel._model_settings_controller.on_pull_embedding_model
+		)
+	):
+		panel.pull_embedding_model_button.pressed.connect(
+			panel._model_settings_controller.on_pull_embedding_model
+		)
 	if is_instance_valid(panel.api_provider_selector) and is_instance_valid(panel._model_settings_controller) and not panel.api_provider_selector.item_selected.is_connected(panel._model_settings_controller.on_api_provider_selected):
 		panel.api_provider_selector.item_selected.connect(panel._model_settings_controller.on_api_provider_selected)
 	if is_instance_valid(panel.api_key_input) and is_instance_valid(panel._model_settings_controller) and not panel.api_key_input.text_changed.is_connected(panel._model_settings_controller.on_api_key_changed):
