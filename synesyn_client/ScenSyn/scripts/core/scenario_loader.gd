@@ -53,6 +53,12 @@ const StoryScenarioContractScript = preload(
 ##   [VIS_STORY]         — Visual story export config.
 ##   [RELATIONAL_MATRIX] — Relational matrix schema.
 ##   [PLAYER_AUTO_INPUT] — Auto-input / simulation config.
+##   [LUMUR_AUDIENCE]    — Opt-in audience-steering config for an external client
+##                         (e.g. Lumur). Body may be a JSON object (WORKSHOP_AGENDA
+##                         precedent: nested zones / zone_actions) or flat
+##                         key:value lines (+ zone_<id> shorthand). Result is
+##                         scenario["lumur_audience"]. Synesyn does not act on it
+##                         beyond pass-through. Absent → unchanged (ADR 0027).
 ##
 ## All unknown sections are collected into section_texts and are available to
 ## themes via scenario["section_texts"][section_name].
@@ -184,6 +190,8 @@ func parse_scenario_file(scenario_content: String) -> Dictionary:
 	var system_config: Dictionary = {}
 	# NEW: Player auto-input configuration
 	var player_auto_input_config: Dictionary = {}
+	# Opt-in audience steering for external clients (e.g. Lumur); raw body then finalized.
+	var lumur_audience_raw: String = ""
 	# NEW: Scenario-scoped symbolic memory continuity configuration
 	var memory_continuity: Dictionary = {}
 	# NEW: Optional vis_story export configuration
@@ -262,6 +270,9 @@ func parse_scenario_file(scenario_content: String) -> Dictionary:
 				var key = parts[0].strip_edges().to_lower()
 				var value = parts[1].strip_edges()
 				player_auto_input_config[key] = value
+		elif current_section == "LUMUR_AUDIENCE":
+			# Accumulate body; finalize after the file (JSON object or flat key:value).
+			lumur_audience_raw += original_line + "\n"
 		elif current_section == "MEMORY_CONTINUITY" and line != "":
 			var parts = line.split(":", true, 1)
 			if parts.size() == 2:
@@ -363,7 +374,7 @@ func parse_scenario_file(scenario_content: String) -> Dictionary:
 				var key = parts[0].strip_edges().to_lower()
 				var value = parts[1].strip_edges()
 				ambient_sound_config[key] = value
-		elif current_section != "" and current_section not in ["SCENARIO", "VOICES", "CHARACTERS", "PHASE_GUIDANCE", "STAGE_GUIDANCE", "DIRECTOR_ARCHETYPES", "TURN_OBLIGATIONS", "SYSTEM_CONFIG", "TIME_MODEL", "PLAYER_AUTO_INPUT", "MEMORY_CONTINUITY", "VIS_STORY", "VERSE_SYSTEM", "RELATIONAL_MATRIX", "VOICE_OVERRIDES", "DRAMATURGY_MATRIX", "LULL_PROTOCOL", "LULL_MURMURS", "AMBIENT_SOUND"]:
+		elif current_section != "" and current_section not in ["SCENARIO", "VOICES", "CHARACTERS", "PHASE_GUIDANCE", "STAGE_GUIDANCE", "DIRECTOR_ARCHETYPES", "TURN_OBLIGATIONS", "SYSTEM_CONFIG", "TIME_MODEL", "PLAYER_AUTO_INPUT", "LUMUR_AUDIENCE", "MEMORY_CONTINUITY", "VIS_STORY", "VERSE_SYSTEM", "RELATIONAL_MATRIX", "VOICE_OVERRIDES", "DRAMATURGY_MATRIX", "LULL_PROTOCOL", "LULL_MURMURS", "AMBIENT_SOUND"]:
 			# Generic text section (INSTRUCTIONS, CONTEXT, WORKSHOP_PACKET, WORKSHOP_AGENDA, WORLDBUILDING_CONTEXT, DESIGN_PROVOCATIONS, PROPOSAL_OUTPUT_TEMPLATE, ABOUT, HOW_TO, etc.)
 			# Section name like "HOW_TO" or "HOW TO" both become key "how_to_text"
 			var key = current_section.to_lower().replace(" ", "_") + "_text"
@@ -414,6 +425,10 @@ func parse_scenario_file(scenario_content: String) -> Dictionary:
 	if not player_auto_input_config.is_empty():
 		scenario["player_auto_input"] = player_auto_input_config
 
+	var lumur_audience_config: Dictionary = _parse_lumur_audience_section(lumur_audience_raw)
+	if not lumur_audience_config.is_empty():
+		scenario["lumur_audience"] = lumur_audience_config
+
 	if not memory_continuity.is_empty():
 		scenario["memory_continuity"] = memory_continuity
 
@@ -441,6 +456,32 @@ func parse_scenario_file(scenario_content: String) -> Dictionary:
 	parsed_data["characters"] = characters
 	parsed_data["scenario"] = scenario
 	return parsed_data
+
+
+## Finalize [LUMUR_AUDIENCE]: prefer a JSON object body (nested zones / zone_actions),
+## else flat key:value (+ zone_<id> shorthand). Invalid JSON that starts with '{'
+## warns and falls back to flat parse (does not crash).
+func _parse_lumur_audience_section(raw_body: String) -> Dictionary:
+	var trimmed: String = raw_body.strip_edges()
+	if trimmed.is_empty():
+		return {}
+	if trimmed.begins_with("{"):
+		var json_parser := JSON.new()
+		var parse_err: int = json_parser.parse(trimmed)
+		if parse_err == OK and typeof(json_parser.data) == TYPE_DICTIONARY:
+			return (json_parser.data as Dictionary).duplicate(true)
+		push_warning(
+			"ScenarioLoader: [LUMUR_AUDIENCE] body starts with '{' but is not a JSON object; falling back to key:value parse"
+		)
+	var out: Dictionary = {}
+	for raw_line in trimmed.split("\n"):
+		var stripped: String = String(raw_line).strip_edges()
+		if stripped.is_empty() or stripped.begins_with("#"):
+			continue
+		var parts: PackedStringArray = stripped.split(":", true, 1)
+		if parts.size() == 2:
+			out[parts[0].strip_edges().to_lower()] = parts[1].strip_edges()
+	return out
 
 ## Generate character instances for the scenario
 ## @param count: Number of characters to generate
