@@ -16,6 +16,10 @@ nothing in an addon depends on an application (ADR 0017). See
 - **Hub** (server, optional): artifact storage + job queue + event stream + auth
 - **External services** (optional): ComfyUI, local or hosted LLM providers,
   SuperCollider (OSC)
+- **External clients** (optional): other products may use the Hub as a render /
+  artifact substrate without living in this repo. Lumur is one example — fully
+  standalone, with an optional Synesyn bridge; see
+  [External clients](building-on-synesyn.md#external-clients-example-lumur)
 
 ## Data model
 

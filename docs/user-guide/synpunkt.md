@@ -135,7 +135,8 @@ scenario + collection → collection → global.
 
 #### External client tags (example: Lumur)
 
-External clients that submit Hub renders may discover the same `json.workflow` presets by querying `metadata.preset.tags`. Lumur is one such client; the convention below is generic and does not hardcode a Hub URL or server.
+External clients that submit Hub renders may discover the same `json.workflow` presets by querying `metadata.preset.tags`. Lumur is one such client (fully standalone; Synesyn is optional via its own bridge); the convention below is generic and does not hardcode a Hub URL or server. Broader Hub touchpoints for that bridge are summarised under
+[External clients](../developer-guide/building-on-synesyn.md#external-clients-example-lumur).
 
 **Discovery tag**:
 - `lumur:surface_role=<role>` (example: `lumur:surface_role=floor`)

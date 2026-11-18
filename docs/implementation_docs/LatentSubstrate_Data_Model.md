@@ -93,6 +93,8 @@ Artifacts should be stored with clear type taxonomy, e.g.:
 - `json.workflow`, `json.metrics`
 - `json.lumur_room` (room package registered by an external client such as Lumur for provenance; opaque JSON, no Hub schema validator)
 - `json.lumur_session` (recorded room session from an external client such as Lumur: audience events, stage actions, Story Log refs; opaque JSON, no Hub schema validator)
+  - Overview of the optional Hub bridge that produces these:
+    [External clients](../developer-guide/building-on-synesyn.md#external-clients-example-lumur)
 - `json.lipsync` (optional lipsync keyframes for spoken lines)
 - `vector.embedding`
 - `coords.projection_2d`, `coords.projection_3d`

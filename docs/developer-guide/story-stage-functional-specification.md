@@ -462,7 +462,7 @@ scenario_section_enabled(key, default_enabled=true):
 | `[VIS_STORY]` | off unless `enabled: true` | Slideshow of host-supplied images. The backdrop stands when off. |
 | `[AMBIENT_SOUND]` | off unless `enabled: true` | OSC to SuperCollider. Keys: `host` (default `127.0.0.1`), `port` (57120), `base_intensity`, `mood_<phase>` for each phase. |
 | `[PLAYER_AUTO_INPUT]` | off | Host may expose auto-input. The stage only reads `get_player_auto_input()`. |
-| `[LUMUR_AUDIENCE]` | off | Opt-in audience steering for an external client (e.g. Lumur). Body may be a **JSON object** (nested `zones` / `zone_actions`, same precedent as `[WORKSHOP_AGENDA]`) or flat `key: value` lines (optional `zone_<id>` rect shorthand). Result is `scenario["lumur_audience"]`. Synesyn / Story Stage do not act on it; the external bridge maps presence / zone / gathering events to stage choices. Invalid JSON that starts with `{` warns and falls back to flat parse. |
+| `[LUMUR_AUDIENCE]` | off | Opt-in audience steering for an external client (e.g. Lumur). Body may be a **JSON object** (nested `zones` / `zone_actions`, same precedent as `[WORKSHOP_AGENDA]`) or flat `key: value` lines (optional `zone_<id>` rect shorthand). Result is `scenario["lumur_audience"]`. Synesyn / Story Stage do not act on it; the external bridge maps presence / zone / gathering events to stage choices. Invalid JSON that starts with `{` warns and falls back to flat parse. Hub bridge overview: [External clients](building-on-synesyn.md#external-clients-example-lumur). |
 
 Flat form:
 

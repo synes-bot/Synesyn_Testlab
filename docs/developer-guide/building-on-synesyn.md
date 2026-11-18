@@ -310,6 +310,31 @@ project autoload, a class declared outside it or a `res://` path outside it.
 
 ---
 
+## External clients (example: Lumur)
+
+The Hub’s public contracts are usable by products outside this repository. [Lumur](https://github.com/Metapunkt/lumur)
+is one such client: a projection-mapping room runtime that is **fully standalone**. An optional
+`lumur_synesyn` bridge can use Synesyn Hub as a render provider and Story Stage host; Synesyn is
+never required to run Lumur, and Lumur is never required to run Synesyn. Do not hardcode Hub URLs
+or servers in product docs — configure the Hub the same way any remote client would
+([Hub API](hub-api.md)).
+
+What Synesyn already exposes for that optional bridge:
+
+| Concern | Where |
+| --- | --- |
+| Hub render submit + jobs | `POST /render/submit`, `GET /render/jobs/{id}` ([Hub API](hub-api.md), [API Spec](../implementation_docs/Synesyn_Hub_API_Spec.md)) |
+| Artifact byte download (remote clients) | `GET /substrate/artifacts/{id}/content` |
+| Workflow discovery tags | `lumur:surface_role=<role>` (optional `lumur:room`, `lumur:scenario`) on `json.workflow` presets — [SynPunkt](../user-guide/synpunkt.md) |
+| Provenance artifact types | `json.lumur_room`, `json.lumur_session` — [artifacts](artifacts-and-schemas.md), [data model](../implementation_docs/LatentSubstrate_Data_Model.md) |
+| Opt-in audience steering | Scenario section `[LUMUR_AUDIENCE]` (JSON object **or** flat `key: value`) → `scenario["lumur_audience"]`; Synesyn passes it through — table above and [Story Stage spec](story-stage-functional-specification.md) §7.1 |
+
+Lumur’s own application layer (installable room apps, compositor, per-app input permissions) is
+documented upstream as [PRD-003](https://github.com/Metapunkt/lumur/blob/main/docs/product-requirements/PRD-003-LUMUR-OS-APPLICATION-LAYER.md);
+it keeps Synesyn optional and does not change Hub render or substrate contracts.
+
+---
+
 ## Contributing back
 
 **Improvements to the infrastructure are worth more than improvements to any one
@@ -350,4 +375,5 @@ before review.
 - [Code map](code-map.md) — where things live
 - [ADR 0017](../architectural-decisions/0017-synesyn-core-shared-library-addon.md) — the shared-library boundary
 - [Artifacts and schemas](artifacts-and-schemas.md) — the artifact contracts you will be writing against
+- [Hub API](hub-api.md) — render submit, artifact content download, auth
 - [Local development](local-dev.md) — getting the client and hub running

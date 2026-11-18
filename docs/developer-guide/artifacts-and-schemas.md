@@ -44,6 +44,12 @@ Related artifact types:
 - `json.lumur_session` (external client recorded session for provenance / replay; e.g. Lumur)
 - `image.generated`
 
+External clients that use Hub renders (for example Lumur’s optional bridge) also
+rely on `GET /substrate/artifacts/{id}/content` for remote byte download and on
+`lumur:surface_role=*` preset tags — see
+[External clients](building-on-synesyn.md#external-clients-example-lumur) and
+[Hub API](hub-api.md).
+
 ## Cross-application render entrypoint
 
 Clients submit renders through a shared service in `synesyn_core`:

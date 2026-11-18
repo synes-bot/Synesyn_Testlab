@@ -13,7 +13,8 @@ often.
 
 ## Render job endpoints
 
-Used by SynPunkt and ScenSyn when routing renders through the Hub:
+Used by SynPunkt, ScenSyn, and optional external Hub clients when routing renders
+through the Hub:
 
 - `POST /render/submit`
 - `GET /render/jobs/{job_id}`
@@ -29,7 +30,8 @@ Streams the artifact file bytes with an appropriate `Content-Type`. Remote
 clients use this when Hub-local file URIs are not readable on their machine
 (for example fetching `image.generated` after a Hub render). Returns `404` for
 missing artifacts or non-vault paths. Optional Bearer auth matches other Hub
-routes.
+routes. Integration overview (tags, `json.lumur_*` types, `[LUMUR_AUDIENCE]`):
+[External clients](building-on-synesyn.md#external-clients-example-lumur).
 
 ## Artifact metadata updates
 
