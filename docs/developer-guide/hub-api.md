@@ -21,6 +21,16 @@ Used by SynPunkt and ScenSyn when routing renders through the Hub:
 - `POST /render/jobs/{job_id}/cancel`
 - `POST /render/jobs/{job_id}/retry`
 
+## Artifact content download
+
+- `GET /substrate/artifacts/{artifact_id}/content`
+
+Streams the artifact file bytes with an appropriate `Content-Type`. Remote
+clients use this when Hub-local file URIs are not readable on their machine
+(for example fetching `image.generated` after a Hub render). Returns `404` for
+missing artifacts or non-vault paths. Optional Bearer auth matches other Hub
+routes.
+
 ## Artifact metadata updates
 
 - `PATCH /substrate/artifacts/{artifact_id}/metadata`

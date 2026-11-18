@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import base64
+import mimetypes
 from pathlib import Path
 from urllib.parse import urlparse
 from urllib.request import url2pathname
 
 from fastapi import APIRouter, HTTPException, Request
+from fastapi.responses import FileResponse
 from ..substrate.artifact_store import ArtifactStore
 from pydantic import BaseModel
 import logging
@@ -141,6 +143,52 @@ async def create_artifact(payload: ArtifactCreate, request: Request):
 		raise HTTPException(status_code=500, detail=f"{type(e).__name__}: {e}")
 
 
+def _resolve_artifact_file(rec: dict, artifacts_root: Path) -> Path | None:
+	"""Resolve a vault-relative artifact file path from a substrate record.
+
+	Returns None when the URI is missing, not a file:// URI, outside the
+	artifacts vault, or not a regular file. Used by download and delete.
+	"""
+	uri = str(rec.get("uri") or "").strip()
+	if not uri.startswith("file:"):
+		return None
+	try:
+		p = Path(url2pathname(urlparse(uri).path)).resolve()
+	except Exception:
+		return None
+	# Only serve/delete files inside the workspace artifacts dir (no path traversal).
+	if not p.is_relative_to(artifacts_root):
+		return None
+	if not p.is_file():
+		return None
+	return p
+
+
+@router.get("/artifacts/{artifact_id}/content")
+async def get_artifact_content(artifact_id: str, request: Request):
+	"""Stream an artifact's bytes for remote clients that cannot read local file:// URIs."""
+	repo = _require_repo(request)
+	aid = (artifact_id or "").strip()
+	if not aid:
+		raise HTTPException(status_code=400, detail="artifact_id is required")
+
+	rec = await repo.get_artifact_record(aid)
+	if not rec:
+		raise HTTPException(status_code=404, detail="Artifact not found")
+
+	cfg = request.app.state.cfg
+	if not getattr(cfg, "workspace", None):
+		raise HTTPException(status_code=503, detail="Workspace not configured")
+
+	artifacts_root = Path(cfg.workspace.artifacts_dir).resolve()
+	path = _resolve_artifact_file(rec, artifacts_root)
+	if path is None:
+		raise HTTPException(status_code=404, detail="Artifact content not found")
+
+	media_type = mimetypes.guess_type(path.name)[0] or "application/octet-stream"
+	return FileResponse(path, media_type=media_type, filename=path.name)
+
+
 @router.delete("/artifacts/{artifact_id}")
 async def delete_artifact(artifact_id: str, request: Request, delete_file: bool = True):
 	repo = _require_repo(request)
@@ -157,19 +205,13 @@ async def delete_artifact(artifact_id: str, request: Request, delete_file: bool 
 		cfg = request.app.state.cfg
 		if getattr(cfg, "workspace", None):
 			artifacts_root = Path(cfg.workspace.artifacts_dir).resolve()
-			uri = str(rec.get("uri") or "").strip()
-			if uri.startswith("file:"):
+			p = _resolve_artifact_file(rec, artifacts_root)
+			if p is not None:
 				try:
-					p = Path(url2pathname(urlparse(uri).path)).resolve()
-					# Only delete files inside the workspace artifacts dir (safety).
-					if p.is_relative_to(artifacts_root):
-						try:
-							p.unlink()
-							deleted_file = True
-						except FileNotFoundError:
-							deleted_file = False
-				except Exception as e:
-					raise HTTPException(status_code=400, detail=f"Failed to delete artifact file: {e}")
+					p.unlink()
+					deleted_file = True
+				except FileNotFoundError:
+					deleted_file = False
 
 	ok = await repo.delete_artifact(aid)
 	if not ok:
