@@ -36,7 +36,7 @@ Synesyn is not one program. It is **platform infrastructure plus indicative appl
 | **Infrastructure** | [`synesyn_client/addons/`](synesyn_client/addons/) | Reusable Godot addons that shape the platform. No product narrative of their own |
 | **Applications** | `synesyn_client/ScenSyn/`, `synesyn_client/readymade/` | End-user applications that consume the infrastructure |
 
-The distinction is structured such that applications depend on addons, and addons reach shared behaviour through `synesyn_core`a 'central coordinating' add-on for the system. That is what makes the infrastructure reusable, and available for developing applications that do not exist yet.
+The distinction is structured such that applications depend on addons, and addons reach shared behaviour through `synesyn_core` a 'central coordinating' add-on for the system. That is what makes the infrastructure reusable, and available for developing applications that do not exist yet.
 
 ### The infrastructure layer
 
@@ -77,7 +77,7 @@ Contributions back to the infrastructure are actively wanted, and are more valua
 
 ## ScenSyn: two session types
 
-ScenSyn is one application containing two distinct *session types**. They share the runtime — scenario loading, AI character rotation, the story log, voice — and diverge in what a session is *for*. Each session type owns one or more **collections**, which group scenarios of a similar kind.
+ScenSyn is one application containing two distinct **session types**. They share the runtime — scenario loading, AI character rotation, the story log, voice — and diverge in what a session is *for*. Each session type owns one or more **collections**, which group scenarios of a similar kind.
 
 ### Workshop Catalyst — facilitated group foresight
 
@@ -208,9 +208,9 @@ terms — *closure* above all — mean something specific here.
 
 Synesyn comes out of the artistic PhD research project **Forward Remembrance: Exploring Latent Utopias**, at the **Trondheim Academy of Fine Art, NTNU** (Norwegian University of Science and Technology). The software stack follows the core idea of *Forward Remembrance* — reflecting backward to patterns held in data while remembering forward into speculative futures as praxis named as the **Metapunkt method**.
 
-The working runtime has been structured and improved upon thank to support from **NTNU Technology Transfer (NTNU TTO)** and funding from **NTNU Discovery**, in aid of the step from research prototype toward something other people could use.
+The working runtime has been structured and improved upon thanks to support from **NTNU Technology Transfer (NTNU TTO)** and funding from **NTNU Discovery**, in aid of the step from research prototype toward something other people could use.
 
-© 2025 “Synesyn” by Ayodele Arigbabu, Norwegian University of Science and Technology. If you cite the software in academic or artistic research, [`CITATION.cff`](CITATION.cff) has the metadata, and the research project should be cited alongside it.
+© 2025–2026 “Synesyn” by Ayodele Arigbabu, Norwegian University of Science and Technology. If you cite the software in academic or artistic research, [`CITATION.cff`](CITATION.cff) has the metadata, and the research project should be cited alongside it.
 
 ## Metapunkt
 
@@ -239,6 +239,10 @@ Built by **Ayodele Arigbabu**, with the aid of AI coding systems.
 - **UI/UX and product development analysis and feedback** — Seun Oshinaike,
   Made by Purple
 
+**STFX (Seed To Field Expansion)** draws on Moyo Okediji's *Artrithmetic*. The
+public kernel, memory, and store names use `stfx` rather than the earlier working
+term; see [ADR 0032](docs/architectural-decisions/0032-stfx-naming-for-kernel-memory-and-store.md).
+
 Bundled third-party code, fonts and models are credited with their licences in
 [`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md).
 
@@ -248,7 +252,7 @@ The Metapunkt Project has been supported with NOK 200,000 in pilot development s
 
 ## Licence
 
-© 2025 “Synesyn” by Ayodele Arigbabu, Norwegian University of Science and Technology
+© 2025–2026 “Synesyn” by Ayodele Arigbabu, Norwegian University of Science and Technology
 
 Source code is MIT. Text, documentation, and other website material are [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). See [`LICENSE`](LICENSE).
 

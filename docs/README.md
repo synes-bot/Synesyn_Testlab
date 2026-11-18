@@ -57,7 +57,7 @@ because a checklist records intent and not necessarily actual implementation.
 
 ## Credit and licence
 
-© 2025 “Synesyn” by Ayodele Arigbabu, Norwegian University of Science and Technology
+© 2025–2026 “Synesyn” by Ayodele Arigbabu, Norwegian University of Science and Technology
 
 This documentation is [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). The source code is MIT. See [`LICENSE`](https://github.com/Metapunkt/Synesyn/blob/main/LICENSE).
 

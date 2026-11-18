@@ -54,7 +54,7 @@ First public release of the Synesyn platform.
 
 ### Changed
 
-- Copyright notice is © 2025 “Synesyn” by Ayodele Arigbabu, Norwegian University of Science and Technology. Source code stays MIT. Text, documentation, and other website material are CC BY-SA 4.0. `TRADEMARK.md` no longer restates the MIT permissions. The NTNU Discovery pilot credit and logo are in the README and the documentation index.
+- Copyright notice is © 2025–2026 “Synesyn” by Ayodele Arigbabu, Norwegian University of Science and Technology. Source code stays MIT. Text, documentation, and other website material are CC BY-SA 4.0. `TRADEMARK.md` no longer restates the MIT permissions. The NTNU Discovery pilot credit and logo are in the README and the documentation index.
 
 - **Story Stage is its own addon**, `addons/story_stage`, and depends only on
   `synesyn_core`. It asks a `StoryStageHost` for everything it used to read from ScenSyn's
