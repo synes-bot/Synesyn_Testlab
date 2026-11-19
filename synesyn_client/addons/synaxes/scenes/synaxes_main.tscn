@@ -111,6 +111,14 @@ button_pressed = true
 text = "Details / Closures"
 icon = ExtResource("icon_panel")
 
+[node name="ExpandPatternSpaceToolbar" type="Button" parent="MainContainer/OuterVBox/ToolbarRow" unique_id=272814210]
+layout_mode = 2
+tooltip_text = "Expand Pattern Space to fill the main panel (shortcut: X)."
+theme_type_variation = &"ButtonThemeToggle"
+theme_override_font_sizes/font_size = 12
+toggle_mode = true
+text = "Expand Space"
+
 [node name="ToolbarSpacer" type="Control" parent="MainContainer/OuterVBox/ToolbarRow" unique_id=1985090450]
 layout_mode = 2
 size_flags_horizontal = 3
@@ -438,16 +446,31 @@ layout_mode = 2
 size_flags_vertical = 3
 size_flags_stretch_ratio = 3.0
 
-[node name="SubViewportContainer" type="SubViewportContainer" parent="MainContainer/OuterVBox/ScrollContainer/VSplitContainer/TopSection/PatternViewerContainer/MarginContainer/PatternScroll/VBoxContainer/ViewerArea" unique_id=149533819]
+[node name="ViewerStack" type="Control" parent="MainContainer/OuterVBox/ScrollContainer/VSplitContainer/TopSection/PatternViewerContainer/MarginContainer/PatternScroll/VBoxContainer/ViewerArea" unique_id=149533818]
+clip_contents = true
 layout_mode = 2
 size_flags_vertical = 3
+
+[node name="SubViewportContainer" type="SubViewportContainer" parent="MainContainer/OuterVBox/ScrollContainer/VSplitContainer/TopSection/PatternViewerContainer/MarginContainer/PatternScroll/VBoxContainer/ViewerArea/ViewerStack" unique_id=149533819]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 focus_mode = 2
 mouse_filter = 0
 mouse_force_pass_scroll_events = false
 mouse_default_cursor_shape = 13
 stretch = true
 
-[node name="PatternViewport" type="SubViewport" parent="MainContainer/OuterVBox/ScrollContainer/VSplitContainer/TopSection/PatternViewerContainer/MarginContainer/PatternScroll/VBoxContainer/ViewerArea/SubViewportContainer" unique_id=1672353929]
+[node name="RegionBoxOverlay" type="ColorRect" parent="MainContainer/OuterVBox/ScrollContainer/VSplitContainer/TopSection/PatternViewerContainer/MarginContainer/PatternScroll/VBoxContainer/ViewerArea/ViewerStack" unique_id=149533817]
+visible = false
+layout_mode = 0
+mouse_filter = 2
+color = Color(0.3, 0.65, 1, 0.22)
+
+[node name="PatternViewport" type="SubViewport" parent="MainContainer/OuterVBox/ScrollContainer/VSplitContainer/TopSection/PatternViewerContainer/MarginContainer/PatternScroll/VBoxContainer/ViewerArea/ViewerStack/SubViewportContainer" unique_id=1672353929]
 handle_input_locally = false
 physics_object_picking = true
 physics_object_picking_sort = true
@@ -455,25 +478,71 @@ gui_snap_controls_to_pixels = false
 size = Vector2i(493, 299)
 render_target_update_mode = 4
 
-[node name="PatternViewer" type="Node3D" parent="MainContainer/OuterVBox/ScrollContainer/VSplitContainer/TopSection/PatternViewerContainer/MarginContainer/PatternScroll/VBoxContainer/ViewerArea/SubViewportContainer/PatternViewport" unique_id=370686031]
+[node name="PatternViewer" type="Node3D" parent="MainContainer/OuterVBox/ScrollContainer/VSplitContainer/TopSection/PatternViewerContainer/MarginContainer/PatternScroll/VBoxContainer/ViewerArea/ViewerStack/SubViewportContainer/PatternViewport" unique_id=370686031]
 script = ExtResource("1_ruhwa")
 
-[node name="Camera3D" type="Camera3D" parent="MainContainer/OuterVBox/ScrollContainer/VSplitContainer/TopSection/PatternViewerContainer/MarginContainer/PatternScroll/VBoxContainer/ViewerArea/SubViewportContainer/PatternViewport/PatternViewer" unique_id=1928300106]
+[node name="Camera3D" type="Camera3D" parent="MainContainer/OuterVBox/ScrollContainer/VSplitContainer/TopSection/PatternViewerContainer/MarginContainer/PatternScroll/VBoxContainer/ViewerArea/ViewerStack/SubViewportContainer/PatternViewport/PatternViewer" unique_id=1928300106]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 10)
 
-[node name="PatternGraph" type="Node3D" parent="MainContainer/OuterVBox/ScrollContainer/VSplitContainer/TopSection/PatternViewerContainer/MarginContainer/PatternScroll/VBoxContainer/ViewerArea/SubViewportContainer/PatternViewport/PatternViewer" unique_id=304253223]
+[node name="PatternGraph" type="Node3D" parent="MainContainer/OuterVBox/ScrollContainer/VSplitContainer/TopSection/PatternViewerContainer/MarginContainer/PatternScroll/VBoxContainer/ViewerArea/ViewerStack/SubViewportContainer/PatternViewport/PatternViewer" unique_id=304253223]
 
-[node name="DirectionalLight3D" type="DirectionalLight3D" parent="MainContainer/OuterVBox/ScrollContainer/VSplitContainer/TopSection/PatternViewerContainer/MarginContainer/PatternScroll/VBoxContainer/ViewerArea/SubViewportContainer/PatternViewport/PatternViewer" unique_id=1952985916]
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="MainContainer/OuterVBox/ScrollContainer/VSplitContainer/TopSection/PatternViewerContainer/MarginContainer/PatternScroll/VBoxContainer/ViewerArea/ViewerStack/SubViewportContainer/PatternViewport/PatternViewer" unique_id=1952985916]
 transform = Transform3D(0.766044, -0.321394, 0.55667, 0, 0.866025, 0.5, -0.642788, -0.383022, 0.663414, 0, 5, 0)
 shadow_enabled = true
 
-[node name="DebugInfo" type="Label" parent="MainContainer/OuterVBox/ScrollContainer/VSplitContainer/TopSection/PatternViewerContainer/MarginContainer/PatternScroll/VBoxContainer/ViewerArea/SubViewportContainer/PatternViewport/PatternViewer" unique_id=1664016029]
+[node name="DebugInfo" type="Label" parent="MainContainer/OuterVBox/ScrollContainer/VSplitContainer/TopSection/PatternViewerContainer/MarginContainer/PatternScroll/VBoxContainer/ViewerArea/ViewerStack/SubViewportContainer/PatternViewport/PatternViewer" unique_id=1664016029]
 visible = false
 offset_right = 40.0
 offset_bottom = 23.0
 text = "Patterns: 0
 Selected: 0
 FPS: 60"
+
+[node name="HoverTooltipLabel" type="Label" parent="MainContainer/OuterVBox/ScrollContainer/VSplitContainer/TopSection/PatternViewerContainer/MarginContainer/PatternScroll/VBoxContainer" unique_id=1852174566]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = ""
+autowrap_mode = 3
+
+[node name="InspectPanel" type="PanelContainer" parent="MainContainer/OuterVBox/ScrollContainer/VSplitContainer/TopSection/PatternViewerContainer/MarginContainer/PatternScroll/VBoxContainer" unique_id=1852174565]
+visible = false
+layout_mode = 2
+size_flags_vertical = 0
+
+[node name="InspectMargin" type="MarginContainer" parent="MainContainer/OuterVBox/ScrollContainer/VSplitContainer/TopSection/PatternViewerContainer/MarginContainer/PatternScroll/VBoxContainer/InspectPanel" unique_id=1852174564]
+layout_mode = 2
+theme_override_constants/margin_left = 6
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 6
+theme_override_constants/margin_bottom = 4
+
+[node name="InspectVBox" type="VBoxContainer" parent="MainContainer/OuterVBox/ScrollContainer/VSplitContainer/TopSection/PatternViewerContainer/MarginContainer/PatternScroll/VBoxContainer/InspectPanel/InspectMargin" unique_id=1852174563]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="InspectTitle" type="Label" parent="MainContainer/OuterVBox/ScrollContainer/VSplitContainer/TopSection/PatternViewerContainer/MarginContainer/PatternScroll/VBoxContainer/InspectPanel/InspectMargin/InspectVBox" unique_id=1852174562]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "Point inspect"
+
+[node name="InspectThemeLabel" type="Label" parent="MainContainer/OuterVBox/ScrollContainer/VSplitContainer/TopSection/PatternViewerContainer/MarginContainer/PatternScroll/VBoxContainer/InspectPanel/InspectMargin/InspectVBox" unique_id=1852174561]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "Theme: —"
+autowrap_mode = 3
+
+[node name="InspectSourceLabel" type="Label" parent="MainContainer/OuterVBox/ScrollContainer/VSplitContainer/TopSection/PatternViewerContainer/MarginContainer/PatternScroll/VBoxContainer/InspectPanel/InspectMargin/InspectVBox" unique_id=1852174560]
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = "Source: —"
+autowrap_mode = 3
+
+[node name="InspectSnippetLabel" type="Label" parent="MainContainer/OuterVBox/ScrollContainer/VSplitContainer/TopSection/PatternViewerContainer/MarginContainer/PatternScroll/VBoxContainer/InspectPanel/InspectMargin/InspectVBox" unique_id=1852174559]
+custom_minimum_size = Vector2(0, 48)
+layout_mode = 2
+theme_override_font_sizes/font_size = 11
+text = ""
+autowrap_mode = 3
 
 [node name="ControlsPanel" type="PanelContainer" parent="MainContainer/OuterVBox/ScrollContainer/VSplitContainer/TopSection/PatternViewerContainer/MarginContainer/PatternScroll/VBoxContainer" unique_id=1852174567]
 layout_mode = 2
@@ -512,6 +581,29 @@ size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 11
 text = "Focus Selection"
 icon = ExtResource("icon_focus")
+
+[node name="ExpandPatternSpaceButton" type="Button" parent="MainContainer/OuterVBox/ScrollContainer/VSplitContainer/TopSection/PatternViewerContainer/MarginContainer/PatternScroll/VBoxContainer/ControlsPanel/MarginContainer/VBoxContainer/ActionButtons" unique_id=1959795326]
+layout_mode = 2
+size_flags_horizontal = 3
+tooltip_text = "Expand Pattern Space to fill the main panel (X). Press again to restore."
+theme_override_font_sizes/font_size = 11
+toggle_mode = true
+text = "Expand"
+
+[node name="BoxSelectButton" type="Button" parent="MainContainer/OuterVBox/ScrollContainer/VSplitContainer/TopSection/PatternViewerContainer/MarginContainer/PatternScroll/VBoxContainer/ControlsPanel/MarginContainer/VBoxContainer/ActionButtons" unique_id=1959795327]
+layout_mode = 2
+size_flags_horizontal = 3
+tooltip_text = "Draw a box in Pattern Space to select a group of points (B)."
+theme_override_font_sizes/font_size = 11
+toggle_mode = true
+text = "Box select"
+
+[node name="DraftFromSelectionButton" type="Button" parent="MainContainer/OuterVBox/ScrollContainer/VSplitContainer/TopSection/PatternViewerContainer/MarginContainer/PatternScroll/VBoxContainer/ControlsPanel/MarginContainer/VBoxContainer/ActionButtons" unique_id=1959795328]
+layout_mode = 2
+size_flags_horizontal = 3
+tooltip_text = "Start a provisional Closure draft from the selected points. Never auto-commits."
+theme_override_font_sizes/font_size = 11
+text = "Draft closure"
 
 [node name="HSeparator" type="HSeparator" parent="MainContainer/OuterVBox/ScrollContainer/VSplitContainer/TopSection/PatternViewerContainer/MarginContainer/PatternScroll/VBoxContainer/ControlsPanel/MarginContainer/VBoxContainer" unique_id=909900494]
 layout_mode = 2

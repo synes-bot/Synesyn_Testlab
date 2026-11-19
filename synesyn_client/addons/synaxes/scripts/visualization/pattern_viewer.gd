@@ -7,12 +7,23 @@ const PatternGraphScript = preload("res://addons/synaxes/scripts/visualization/p
 signal pattern_selected(pattern_id)
 signal pattern_hovered(pattern_id)
 signal pattern_deselected
+signal point_hovered(index: int)
+signal point_clicked(index: int)
+signal region_drag_updated(screen_pos: Vector2)
+signal region_drag_ended(screen_pos: Vector2)
+
+const PointCloudLayerScript = preload(
+	"res://addons/synaxes/scripts/visualization/synaxes_point_cloud_layer.gd"
+)
 
 # Node references
 var pattern_container: Node3D = null
 var pattern_graph: PatternGraph = null
 var camera: Camera3D = null
 var debug_info: Label = null
+var _point_cloud: Node3D = null
+var _region_select_mode: bool = false
+var _region_dragging: bool = false
 
 # Scene references
 @export var pattern_node_scene: PackedScene
@@ -300,14 +311,24 @@ func _handle_mouse_button(event: InputEventMouseButton) -> void:
 	match event.button_index:
 		MOUSE_BUTTON_LEFT:
 			if event.pressed:
-				if not event.shift_pressed:
-					_is_dragging = true
+				if _region_select_mode and not event.shift_pressed:
+					_region_dragging = true
 					_last_mouse_pos = event.position
-					_select_pattern_at_position(event.position)
+					emit_signal("region_drag_updated", event.position)
+				elif not event.shift_pressed:
+					_last_mouse_pos = event.position
+					if _try_select_point_at_position(event.position):
+						_is_dragging = false
+					else:
+						_is_dragging = true
+						_select_pattern_at_position(event.position)
 				else:
 					_is_panning = true
 					_last_mouse_pos = event.position
 			else:
+				if _region_dragging:
+					_region_dragging = false
+					emit_signal("region_drag_ended", event.position)
 				_is_dragging = false
 				_is_panning = false
 		MOUSE_BUTTON_RIGHT:
@@ -325,9 +346,10 @@ func _handle_mouse_button(event: InputEventMouseButton) -> void:
 			_zoom_camera(1)
 
 func _handle_mouse_motion(event: InputEventMouseMotion) -> void:
-	# Remove excessive debug output
-	# print("PatternViewer: Mouse motion, relative: ", event.relative)
-	
+	if _region_dragging:
+		emit_signal("region_drag_updated", event.position)
+		_last_mouse_pos = event.position
+		return
 	if _is_dragging:
 		var delta = event.relative
 		_orbit_camera(delta)
@@ -336,7 +358,7 @@ func _handle_mouse_motion(event: InputEventMouseMotion) -> void:
 		var delta = event.relative
 		_pan_camera(delta)
 		_last_mouse_pos = event.position
-	
+	_update_hovered_point(event.position)
 	_update_hovered_pattern(event.position)
 
 func _handle_keyboard(event: InputEventKey) -> void:
@@ -945,12 +967,80 @@ func display_patterns(patterns: Array) -> void:
 # Public method for clearing patterns
 func clear_patterns() -> void:
 	clear_visualization()
+	clear_point_cloud()
 	
 	# Also clear the pattern graph if it exists
 	if pattern_graph:
 		pattern_graph.clear()
 	else:
 		printerr("PatternViewer: Cannot clear pattern graph, pattern_graph is null")
+
+
+func set_point_cloud(points: Array) -> void:
+	_ensure_point_cloud()
+	if _point_cloud and _point_cloud.has_method("set_points"):
+		_point_cloud.set_points(points)
+
+
+func clear_point_cloud() -> void:
+	if _point_cloud and _point_cloud.has_method("clear_points"):
+		_point_cloud.clear_points()
+
+
+func set_region_select_mode(is_on: bool) -> void:
+	_region_select_mode = is_on
+	_region_dragging = false
+
+
+func set_point_selection(indices: Array) -> void:
+	if _point_cloud and _point_cloud.has_method("set_selection"):
+		_point_cloud.set_selection(indices)
+
+
+func set_point_hovered(index: int) -> void:
+	if _point_cloud and _point_cloud.has_method("set_hovered"):
+		_point_cloud.set_hovered(index)
+
+
+func point_screen_positions() -> Array:
+	if _point_cloud and camera and _point_cloud.has_method("screen_positions"):
+		return _point_cloud.screen_positions(camera)
+	return []
+
+
+func _ensure_point_cloud() -> void:
+	if _point_cloud != null and is_instance_valid(_point_cloud):
+		return
+	_point_cloud = PointCloudLayerScript.new()
+	_point_cloud.name = "PointCloudLayer"
+	add_child(_point_cloud)
+
+
+func _try_select_point_at_position(pos: Vector2) -> bool:
+	if _point_cloud == null or camera == null:
+		return false
+	if not _point_cloud.has_method("pick_index_at_screen"):
+		return false
+	var world_3d: World3D = get_world_3d()
+	if world_3d == null:
+		return false
+	var idx: int = _point_cloud.pick_index_at_screen(camera, pos, world_3d.direct_space_state)
+	if idx < 0:
+		return false
+	emit_signal("point_clicked", idx)
+	return true
+
+
+func _update_hovered_point(pos: Vector2) -> void:
+	if _point_cloud == null or camera == null:
+		return
+	if not _point_cloud.has_method("pick_index_at_screen"):
+		return
+	var world_3d: World3D = get_world_3d()
+	if world_3d == null:
+		return
+	var idx: int = _point_cloud.pick_index_at_screen(camera, pos, world_3d.direct_space_state)
+	emit_signal("point_hovered", idx)
 
 func _on_pattern_selected(pattern_id: int) -> void:
 	if not pattern_graph:

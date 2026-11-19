@@ -82,7 +82,7 @@ Enable under Project → Project Settings → Plugins (`synesyn_core` before Syn
 
 | Input | Action |
 | --- | --- |
-| Left click | Select pattern |
+| Left click | Select pattern (or inspect an item point) |
 | Left drag | Orbit |
 | Middle drag / Shift+left drag | Pan |
 | Right click | Deselect |
@@ -90,6 +90,10 @@ Enable under Project → Project Settings → Plugins (`synesyn_core` before Syn
 | Space | Reset camera |
 | Esc | Clear selection |
 | F | Focus selected pattern |
+| X / Expand | Expand Pattern Space to fill the main panel; press again to restore |
+| B / Box select | Draw a box to select a group of item points |
+| Draft closure | Start a provisional Dream Inbox candidate from the selection (never auto-commits; provenance `manual_region`) |
+| Hover | Short tooltip (snippet start + source); click opens the inspect pane |
 
 ### Further reading (repo-relative)
 

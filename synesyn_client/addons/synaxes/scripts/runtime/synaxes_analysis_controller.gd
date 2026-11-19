@@ -32,6 +32,7 @@ var dim_method: OptionButton
 var clusters_slider: HSlider
 var pattern_viewer: Node
 var bottom_tabs: TabContainer
+var space_ui  # optional SpaceUiScript (RefCounted)
 
 # State fallbacks when UI is null (also mirrors last UI selection after discover)
 var method_id: int = 0
@@ -76,6 +77,8 @@ func bind_ui(refs: Dictionary) -> void:
 func clear_viewer() -> void:
 	if pattern_viewer and pattern_viewer.has_method("clear_patterns"):
 		pattern_viewer.clear_patterns()
+	if space_ui and space_ui.has_method("clear"):
+		space_ui.clear()
 
 
 func get_discovery_params() -> Dictionary:
@@ -613,6 +616,8 @@ func _populate_pattern_viewer(patterns: Array) -> void:
 			pnode.metadata = p
 			pg.add_pattern(pnode)
 	pv.display_patterns(patterns)
+	if space_ui and space_ui.has_method("on_patterns_ready"):
+		space_ui.on_patterns_ready(patterns)
 
 
 func _apply_artifact_ids(hub_result: Dictionary) -> void:
