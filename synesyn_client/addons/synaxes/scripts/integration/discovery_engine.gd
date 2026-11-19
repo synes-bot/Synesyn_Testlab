@@ -156,7 +156,15 @@ func _discover_clusters(positions: Array, vectors: Array, data: Array, num_clust
 		var cluster_items = []
 		
 		for point_idx in clusters[i]:
-			cluster_items.append(data[point_idx])
+			var item_copy: Dictionary = {}
+			if typeof(data[point_idx]) == TYPE_DICTIONARY:
+				item_copy = (data[point_idx] as Dictionary).duplicate(true)
+			else:
+				item_copy = {"content": str(data[point_idx])}
+			# Stamp projected position so Pattern Space can inspect individual points.
+			if point_idx >= 0 and point_idx < positions.size():
+				item_copy["space_position"] = positions[point_idx]
+			cluster_items.append(item_copy)
 		
 		var pattern = {
 			"id": pattern_id,

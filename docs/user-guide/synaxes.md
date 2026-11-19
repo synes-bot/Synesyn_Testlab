@@ -17,7 +17,7 @@ Spine: **Import → Explore → Choose → Name → Commit**
    - Prefer **Import latest Hub context graph** when one or more published graphs exist.
    - Or choose **Import** and select a Hub context graph, a ScenSyn session, or the labelled demo.
 3. **Discover** — leave Advanced closed and run **Discover** with the theme-count control on the main panel.
-4. **Explore** — after discovery, **Pattern Overview** opens by default (the 3D Pattern Space remains available as an optional view).
+4. **Explore** — after discovery, **Pattern Overview** opens by default (the 3D Pattern Space remains available as an optional view). In Pattern Space you can **Expand** (shortcut **X**) to fill the main panel, hover a point for a short tooltip, click a point to inspect its snippet / source / theme, or **Box select** (**B**) a group of points and **Draft closure** to start a provisional Dream Inbox candidate (never auto-committed).
 5. **Choose** — select a candidate theme from Pattern Overview or the Dream Inbox and click **Work on this**.
 6. **Name** — give the Closure a name and intent, and optionally choose an **Orientation** (the A–D [Closure Map](../concepts/closure-map.md) quadrants, shown with plain-language subtitles).
 7. **Commit** — commit explicitly to the Hub. The orientation coverage strip updates once saved Closures exist, with an optional hand-off to SynPunkt Closures.

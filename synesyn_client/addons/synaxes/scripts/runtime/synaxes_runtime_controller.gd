@@ -24,6 +24,7 @@ const UiBinderScript = preload("res://addons/synaxes/scripts/runtime/synaxes_ui_
 const SourceListBuilderScript = preload("res://addons/synaxes/scripts/runtime/synaxes_source_list_builder.gd")
 const PanelLayoutScript = preload("res://addons/synaxes/scripts/runtime/synaxes_panel_layout.gd")
 const DiscoverFocusScript = preload("res://addons/synaxes/scripts/runtime/synaxes_discover_focus.gd")
+const SpaceUiScript = preload("res://addons/synaxes/scripts/runtime/synaxes_space_ui.gd")
 
 func _update_synaxes_logo(_mode: String = "") -> void:
 	var is_dark_mode := true
@@ -98,6 +99,7 @@ var _pipeline: RefCounted  # HubPipelineScript
 var _closure_ctrl: RefCounted  # ClosureControllerScript
 var _import_ctrl: RefCounted  # ImportControllerScript
 var _analysis_ctrl: RefCounted  # AnalysisControllerScript
+var _space_ui: RefCounted  # SpaceUiScript
 var _ui_refs: Dictionary = {}
 
 var _data: Array = []
@@ -251,6 +253,27 @@ func _ready() -> void:
 	})
 	_analysis_ctrl.analysis_status.connect(_set_status)
 	_analysis_ctrl.discovery_completed.connect(_on_discovery_completed)
+
+	_space_ui = SpaceUiScript.new()
+	_space_ui.bind(self, {
+		"pattern_viewer": pattern_viewer,
+		"left_panel": _find("LeftPanel"),
+		"bottom_panel": _find("BottomPanel"),
+		"left_toggle": _find("ToggleLeftPanel"),
+		"bottom_toggle": _find("ToggleBottomPanel"),
+		"expand_btn": _find("ExpandPatternSpaceButton"),
+		"expand_toolbar": _find("ExpandPatternSpaceToolbar"),
+		"box_btn": _find("BoxSelectButton"),
+		"draft_btn": _find("DraftFromSelectionButton"),
+		"hover_label": _find("HoverTooltipLabel"),
+		"inspect_panel": _find("InspectPanel"),
+		"inspect_theme": _find("InspectThemeLabel"),
+		"inspect_source": _find("InspectSourceLabel"),
+		"inspect_snippet": _find("InspectSnippetLabel"),
+		"region_overlay": _find("RegionBoxOverlay"),
+		"status_cb": Callable(self, "_set_status"),
+	}, _closure_ctrl)
+	_analysis_ctrl.space_ui = _space_ui
 
 	_ensure_hub_source_present()
 
@@ -687,8 +710,16 @@ func _on_clear_pressed() -> void:
 	_analysis_ctrl.engine.set_data([])
 	_analysis_ctrl.last_patterns = []
 	_analysis_ctrl.clear_viewer()
+	if _space_ui:
+		_space_ui.clear()
 	_set_spine_state("idle")
 	_set_status("Cleared. %s" % _EMPTY_CTA)
+
+
+func _unhandled_key_input(event: InputEvent) -> void:
+	if event is InputEventKey and _space_ui:
+		if _space_ui.handle_unhandled_key(event as InputEventKey):
+			get_viewport().set_input_as_handled()
 
 # ── URI loading ───────────────────────────────────────────────────────────
 

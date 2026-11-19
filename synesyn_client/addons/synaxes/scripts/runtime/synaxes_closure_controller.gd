@@ -206,6 +206,27 @@ func get_dream_candidates() -> Array:
 	return dream_candidates.duplicate(true)
 
 
+func add_provisional_candidate(candidate: Dictionary) -> int:
+	## Append a machine-proposed candidate (e.g. Pattern Space region draft). Never commits.
+	var c: Dictionary = candidate.duplicate(true)
+	c["label_is_provisional"] = true
+	if not c.has("provisional_label"):
+		c["provisional_label"] = str(c.get("name", ""))
+	dream_candidates.append(c)
+	var idx: int = dream_candidates.size() - 1
+	if dream_inbox_list:
+		dream_inbox_list.add_item(_dream_inbox_row_text(c))
+		dream_inbox_list.set_item_tooltip(idx, str(c.get("intent", "")).strip_edges())
+		dream_inbox_list.select(idx)
+	on_dream_candidate_selected(idx)
+	update_decision_buttons()
+	_cstatus(
+		"Provisional draft added (%s). Edit the name, then Commit — nothing is saved yet."
+		% str(c.get("name", "untitled"))
+	)
+	return idx
+
+
 func select_candidate(idx: int) -> bool:
 	## Select a Dream Inbox candidate by index without requiring ItemList UI.
 	if idx < 0 or idx >= dream_candidates.size():
@@ -483,6 +504,7 @@ func commit_closure(provenance_ctx: Dictionary, overrides: Dictionary = {}) -> D
 				"human_edited": label_was_edited,
 				"committed_label": cname,
 			},
+			"selection_origin": str(c.get("selection_origin", "dream_inbox")),
 		}
 	}
 
